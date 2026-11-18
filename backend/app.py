@@ -93,11 +93,13 @@ def analyze_sample(name: str):
 class UrlRequest(BaseModel):
     url: str = Field(min_length=3, max_length=2048)
     live: bool = True
+    save: bool = True  # the browser extension's automatic checks pass False to keep history clean
 
 
 @app.post("/api/analyze/url")
 def analyze_url(req: UrlRequest):
-    return _remember(url_checker.check(req.url, live=req.live))
+    result = url_checker.check(req.url, live=req.live)
+    return _remember(result) if req.save else result
 
 
 @app.get("/api/history")

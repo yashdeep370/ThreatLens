@@ -406,3 +406,13 @@ async function sendChat(text) {
 loadStatus();
 loadSamples();
 loadDashboard();
+
+// Deep link from the browser extension: /#analysis=<id> opens that report.
+const deepLink = location.hash.match(/^#analysis=([\w-]+)$/);
+if (deepLink) {
+  api(`/api/analysis/${deepLink[1]}`).then(a => {
+    if (a.type === "flows") { show("traffic"); renderTraffic(a); }
+    else { show("website"); renderUrl(a); $("#url-input").value = a.url; }
+    setChatAnalysis(a);
+  }).catch(() => {});
+}

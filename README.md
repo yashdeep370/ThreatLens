@@ -34,6 +34,17 @@ Open http://127.0.0.1:8000. Stop the server with `Ctrl+C`.
 
 Trained models and demo samples are included in the repo, so the datasets are only needed to retrain.
 
+## Chrome extension
+
+1. Start the backend (above).
+2. Open `chrome://extensions`, turn on **Developer mode** (top right).
+3. Click **Load unpacked** and select the `extension/` folder.
+4. Pin the ThreatLens icon. Every site you visit gets a badge: **OK** (safe), **!** (caution),
+   **✕** (dangerous), **?** (backend not running). Click the icon for a full check.
+
+Automatic checks use the URL model and reputation layer only (fast, not saved to history); the popup runs
+the full check, including live HTTPS and header checks.
+
 ## Datasets (only for retraining)
 
 | Dataset | Put it in | Source |

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <img src="icons/icon48.png" alt="" width="26" height="26">
+    <div><b>ThreatLens</b><div class="sub">Website Guard</div></div>
+    <button id="settings-btn" class="icon" title="Settings">⚙</button>
+  </header>
+
+  <section id="settings" hidden>
+    <label>Backend URL<input id="backend" type="text"></label>
+    <label class="row"><input id="auto" type="checkbox"> Check every site I visit</label>
+    <label class="row"><input id="notify" type="checkbox"> Notify me about dangerous sites</label>
+    <button id="save" class="btn">Save</button>
+  </section>
+
+  <div id="target" class="target"></div>
+  <div id="loading" class="loading" hidden><div class="spinner"></div>Checking…</div>
+  <div id="result"></div>
+
+  <form id="manual">
+    <input id="manual-url" type="text" placeholder="Check another link…" autocomplete="off">
+    <button class="btn" type="submit">Check</button>
+  </form>
+  <footer>Observed-risk assessment · not a guarantee of security</footer>
+
+  <script src="shared.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
