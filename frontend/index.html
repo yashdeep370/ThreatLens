@@ -18,6 +18,7 @@
     </div>
     <nav>
       <button class="nav-item active" data-view="dashboard"><span>◧</span> Dashboard</button>
+      <button class="nav-item" data-view="live"><span>◉</span> Live Monitor</button>
       <button class="nav-item" data-view="traffic"><span>⇅</span> Traffic Analysis</button>
       <button class="nav-item" data-view="website"><span>⌘</span> Website Check</button>
       <button class="nav-item" data-view="history"><span>☰</span> History</button>
@@ -59,6 +60,37 @@
           <div class="card"><div class="card-label">Active incidents (latest traffic analysis)</div><div id="dash-incidents"></div></div>
           <div class="card"><div class="card-label">Recent activity</div><div id="dash-recent"></div></div>
         </div>
+      </div>
+    </section>
+
+    <!-- LIVE -->
+    <section class="view" id="view-live">
+      <header class="page-head">
+        <div><h1>Live Monitor <span class="live-pill" id="live-pill" hidden>● LIVE</span></h1>
+          <p class="muted">Simulated stream: replays held-out test flows in real time and classifies every second of traffic</p></div>
+        <div class="head-actions live-controls">
+          <select id="live-scenario"></select>
+          <select id="live-speed"><option value="1">1× speed</option><option value="2">2× speed</option><option value="4">4× speed</option></select>
+          <button class="btn primary" id="live-start">▶ Start</button>
+          <button class="btn" id="live-stop" hidden>■ Stop</button>
+        </div>
+      </header>
+      <div class="card live-progress"><div class="bar"><span id="live-bar" style="width:0%"></span></div>
+        <div class="small muted" id="live-progress-text">Choose a scenario and press Start.</div></div>
+      <div class="grid-hero">
+        <div class="card score-card"><div class="card-label">Live security score (last 30 s)</div><div id="live-gauge"></div></div>
+        <div class="card"><div class="card-label">Traffic per second by class</div><div style="height:220px"><canvas id="live-chart"></canvas></div></div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><div class="l">Flows processed</div><div class="v" id="live-total">0</div></div>
+        <div class="tile"><div class="l">Current rate</div><div class="v" id="live-rate">0 /s</div></div>
+        <div class="tile"><div class="l">Active threats</div><div class="v" id="live-active">0</div></div>
+        <div class="tile"><div class="l">Alerts raised</div><div class="v" id="live-alert-count">0</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card"><div class="card-label">Alert feed</div><div id="live-alerts"><p class="muted" style="margin:0">No alerts yet.</p></div></div>
+        <div class="card"><div class="card-label">Session totals</div><div id="live-totals"><p class="muted" style="margin:0">-</p></div>
+          <div id="live-done" class="no-print" style="margin-top:12px"></div></div>
       </div>
     </section>
 

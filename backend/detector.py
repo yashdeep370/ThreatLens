@@ -158,6 +158,15 @@ class FlowDetector:
     # ---------- main entry ----------
     def analyze(self, file, filename: str) -> dict:
         df, skipped = self.load_csv(file)
+        return self.analyze_df(df, filename, skipped)
+
+    def classify(self, df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
+        """Per-flow (predicted class, confidence). Used by the live monitor."""
+        proba = self.model.predict_proba(df[self.features].astype(np.float32))
+        return np.array(self.classes)[proba.argmax(axis=1)], proba.max(axis=1)
+
+    def analyze_df(self, df: pd.DataFrame, filename: str, skipped: int = 0) -> dict:
+        df = df.reset_index(drop=True)
         X = df[self.features].astype(np.float32)
         proba = self.model.predict_proba(X)
         pred_idx = proba.argmax(axis=1)

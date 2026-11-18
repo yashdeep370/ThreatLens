@@ -2,7 +2,7 @@
 const DEFAULT_BACKEND = "http://127.0.0.1:8000";
 
 async function getSettings() {
-  const s = await chrome.storage.local.get({ backend: DEFAULT_BACKEND, autoCheck: true, notify: true });
+  const s = await chrome.storage.local.get({ backend: DEFAULT_BACKEND, autoCheck: true, notify: true, block: true });
   s.backend = s.backend.replace(/\/+$/, "");
   return s;
 }

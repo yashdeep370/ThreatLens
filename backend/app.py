@@ -9,7 +9,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -20,6 +20,8 @@ load_dotenv(ROOT / ".env")
 from backend import llm  # noqa: E402  (needs env loaded first)
 from backend.detector import FlowDetector  # noqa: E402
 from backend.knowledge import KnowledgeBase  # noqa: E402
+from backend.live import SCENARIOS, LiveMonitor  # noqa: E402
+from backend.report_pdf import build_pdf  # noqa: E402
 from backend.url_checker import UrlChecker  # noqa: E402
 
 FRONTEND_DIR = ROOT / "frontend"
@@ -30,6 +32,7 @@ MAX_HISTORY = 50
 kb = KnowledgeBase()
 detector = FlowDetector(kb)
 url_checker = UrlChecker(kb)
+live_monitor = LiveMonitor(detector, kb)
 
 app = FastAPI(title="AI Threat Detection & Security Assessment")
 
@@ -90,6 +93,20 @@ def analyze_sample(name: str):
         return _remember(detector.analyze(f, path.name))
 
 
+@app.get("/api/live/scenarios")
+def live_scenarios():
+    return [{"id": k, "title": v["title"], "seconds": sum(p[0] for p in v["phases"])} for k, v in SCENARIOS.items()]
+
+
+@app.get("/api/live/stream")
+def live_stream(scenario: str = "timeline", speed: float = 1.0):
+    """Server-Sent Events: one 'tick' event per simulated second, then 'done' with
+    the id of a full analysis of everything streamed (so reports and chat work on it)."""
+    on_finish = lambda df, name: _remember(detector.analyze_df(df, name))  # noqa: E731
+    return StreamingResponse(live_monitor.stream(scenario, speed, on_finish), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
 class UrlRequest(BaseModel):
     url: str = Field(min_length=3, max_length=2048)
     live: bool = True
@@ -119,6 +136,15 @@ def get_analysis(analysis_id: str):
     if analysis_id not in history:
         raise HTTPException(404, "Analysis not found")
     return history[analysis_id]
+
+
+@app.get("/api/analysis/{analysis_id}/report.pdf")
+def analysis_pdf(analysis_id: str):
+    if analysis_id not in history:
+        raise HTTPException(404, "Analysis not found")
+    pdf = build_pdf(history[analysis_id], kb.mitre_names())
+    return Response(pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="threatlens-report-{analysis_id}.pdf"'})
 
 
 # ---------- chatbot ----------

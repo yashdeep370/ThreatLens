@@ -37,3 +37,12 @@ class KnowledgeBase:
 
     def playbook(self, threat: str) -> dict | None:
         return self.playbooks.get(threat)
+
+    def mitre_names(self) -> dict:
+        """'T1110' -> 'Brute Force', parsed from chunk titles like 'MITRE ATT&CK T1110: Brute Force'."""
+        names = {}
+        for c in self.chunks:
+            if c["title"].startswith("MITRE ATT&CK ") and ": " in c["title"]:
+                tid, name = c["title"][len("MITRE ATT&CK "):].split(": ", 1)
+                names[tid] = name
+        return names

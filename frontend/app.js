@@ -60,10 +60,12 @@ function gauge(score, size = 220) {
     <div class="gauge-band" style="color:${BAND_COLORS[band]}">${label}</div>`;
 }
 
-function banner(status, sub = "") {
+function banner(status, sub = "", analysisId = null) {
   return `<div class="banner ${status.level}"><div class="icon">${STATUS_ICON[status.level]}</div>
     <div><h2>${esc(status.headline)}</h2>${sub ? `<div class="muted">${sub}</div>` : ""}</div>
-    <div style="margin-left:auto" class="no-print"><button class="btn small" data-action="print">Print report</button></div></div>`;
+    <div style="margin-left:auto;display:flex;gap:8px" class="no-print">
+      ${analysisId ? `<a class="btn small primary" href="/api/analysis/${esc(analysisId)}/report.pdf">⬇ PDF report</a>` : ""}
+      <button class="btn small" data-action="print">Print</button></div></div>`;
 }
 
 function mitreTags(ids) {
@@ -168,7 +170,7 @@ function renderTraffic(a) {
   const iso = a.isolated_detections || [];
   const dist = Object.entries(a.class_distribution).sort((x, y) => y[1] - x[1]);
   $("#traffic-result").innerHTML = `
-    ${banner(a.status, `${esc(a.filename)} · ${num(a.total_flows)} flows · analyzed ${fmtTime(a.analyzed_at)}`)}
+    ${banner(a.status, `${esc(a.filename)} · ${num(a.total_flows)} flows · analyzed ${fmtTime(a.analyzed_at)}`, a.id)}
     <div class="grid-hero">
       <div class="card score-card"><div class="card-label">Security posture</div>${gauge(a.score.value)}
         <div class="score-note">Observed-risk score · not a guarantee of security</div></div>
@@ -264,7 +266,7 @@ function renderUrl(a) {
     </ul>`;
   }
   $("#url-result").innerHTML = `
-    ${banner(a.status, `<span class="mono">${esc(a.url)}</span> · ${fmtTime(a.analyzed_at)}`)}
+    ${banner(a.status, `<span class="mono">${esc(a.url)}</span> · ${fmtTime(a.analyzed_at)}`, a.id)}
     <div class="grid-hero">
       <div class="card score-card"><div class="card-label">Website safety score</div>${gauge(a.score.value)}
         <div class="score-note">URL model + passive checks · not a guarantee</div></div>
@@ -402,9 +404,114 @@ async function sendChat(text) {
   $("#chat-body").scrollTop = $("#chat-body").scrollHeight;
 }
 
+// ---------- live monitor ----------
+const live = { source: null, chart: null, alerts: 0, total: 0 };
+const LIVE_SERIES = ["Benign", "PortScan", "BruteForce", "DoS", "DDoS"];
+const LIVE_POINTS = 60;
+
+async function loadScenarios() {
+  const list = await api("/api/live/scenarios").catch(() => []);
+  $("#live-scenario").innerHTML = list.map(s => `<option value="${esc(s.id)}">${esc(s.title)} · ${s.seconds}s</option>`).join("");
+  $("#live-gauge").innerHTML = gauge(100);
+}
+
+function initLiveChart() {
+  if (live.chart) live.chart.destroy();
+  live.chart = new Chart($("#live-chart"), {
+    type: "line",
+    data: { labels: [], datasets: LIVE_SERIES.map(c => ({
+      label: LABELS[c], data: [], borderColor: CLASS_COLORS[c], backgroundColor: CLASS_COLORS[c] + "55",
+      fill: true, tension: .35, pointRadius: 0, borderWidth: 1.5 })) },
+    options: {
+      maintainAspectRatio: false, animation: { duration: 250 },
+      scales: { x: { ticks: { color: "#8b97b0", maxTicksLimit: 8 }, grid: { color: "#22304d" } },
+                y: { stacked: true, beginAtZero: true, ticks: { color: "#8b97b0" }, grid: { color: "#22304d" } } },
+      plugins: { legend: { labels: { color: "#c6cfe0", boxWidth: 12 } } },
+    },
+  });
+}
+
+function setLiveRunning(running) {
+  $("#live-start").hidden = running;
+  $("#live-stop").hidden = !running;
+  $("#live-pill").hidden = !running;
+  $("#live-scenario").disabled = running;
+  $("#live-speed").disabled = running;
+}
+
+function startLive() {
+  stopLive();
+  initLiveChart();
+  Object.assign(live, { alerts: 0, total: 0 });
+  $("#live-alerts").innerHTML = '<p class="muted" style="margin:0">Monitoring… no alerts yet.</p>';
+  $("#live-done").innerHTML = "";
+  $("#live-alert-count").textContent = "0";
+  const params = new URLSearchParams({ scenario: $("#live-scenario").value, speed: $("#live-speed").value });
+  live.source = new EventSource(`/api/live/stream?${params}`);
+  setLiveRunning(true);
+
+  live.source.addEventListener("tick", e => {
+    const d = JSON.parse(e.data);
+    live.total += d.flows;
+    const c = live.chart;
+    c.data.labels.push(d.time);
+    c.data.datasets.forEach((ds, i) => ds.data.push(d.counts[LIVE_SERIES[i]] || 0));
+    if (c.data.labels.length > LIVE_POINTS) { c.data.labels.shift(); c.data.datasets.forEach(ds => ds.data.shift()); }
+    c.update();
+
+    $("#live-bar").style.width = `${(d.tick / d.of * 100).toFixed(1)}%`;
+    $("#live-progress-text").textContent = `${d.tick} / ${d.of} seconds · mean model confidence ${pct(d.mean_confidence)}`;
+    $("#live-gauge").innerHTML = gauge(d.score);
+    $("#live-total").textContent = num(live.total);
+    $("#live-rate").textContent = `${d.flows} /s`;
+    $("#live-active").textContent = d.active.length;
+    $("#live-active").style.color = d.active.length ? "var(--critical)" : "";
+    $("#live-totals").innerHTML = Object.entries(d.totals).sort((a, b) => b[1] - a[1]).map(([k, v]) =>
+      `<div class="bar-row"><span>${LABELS[k] || esc(k)}</span><div class="bar"><span style="width:${(v / live.total * 100).toFixed(1)}%;background:${CLASS_COLORS[k] || "var(--accent)"}"></span></div><span class="mono small">${num(v)}</span></div>`).join("");
+
+    $$("#live-alerts .alert-item").forEach(el => el.classList.toggle("ended", !d.active.includes(el.dataset.threat)));
+    for (const a of d.alerts) {
+      if (!live.alerts) $("#live-alerts").innerHTML = "";
+      live.alerts++;
+      $("#live-alert-count").textContent = live.alerts;
+      $("#live-alerts").insertAdjacentHTML("afterbegin", `<div class="alert-item ${a.severity}" data-threat="${esc(a.threat)}">
+        <div class="alert-top"><b>${esc(a.title)}</b><span class="sev ${a.severity}">${a.severity}</span></div>
+        <div class="small muted">${esc(a.time)} · ${a.flows} flows/s · confidence ${pct(a.confidence)}</div>
+        ${a.evidence.length ? `<ul class="small" style="margin:6px 0 0;padding-left:18px">${a.evidence.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+        ${a.action ? `<div class="small" style="margin-top:6px">→ <b>Recommended:</b> ${esc(a.action)}</div>` : ""}</div>`);
+    }
+  });
+
+  live.source.addEventListener("done", e => {
+    const d = JSON.parse(e.data);
+    stopLive();
+    $("#live-progress-text").textContent = "Session complete. Full analysis saved to history.";
+    $("#live-done").innerHTML = `<div class="small muted" style="margin-bottom:8px">Whole session: ${esc(d.headline)} · score ${d.score}/100</div>
+      <button class="btn primary small" data-open="${esc(d.analysis_id)}">Open full session report</button>
+      <a class="btn small" href="/api/analysis/${esc(d.analysis_id)}/report.pdf">⬇ PDF</a>
+      <button class="btn small" data-ask="Summarize this live monitoring session and what I should do.">💬 Ask AI</button>`;
+    api(`/api/analysis/${d.analysis_id}`).then(setChatAnalysis).catch(() => {});
+  });
+
+  live.source.onerror = () => {
+    if (!live.source) return;
+    stopLive();
+    $("#live-progress-text").textContent = "Stream stopped (connection closed).";
+  };
+}
+
+function stopLive() {
+  if (live.source) { live.source.close(); live.source = null; }
+  setLiveRunning(false);
+}
+
+$("#live-start").addEventListener("click", startLive);
+$("#live-stop").addEventListener("click", () => { stopLive(); $("#live-progress-text").textContent = "Stopped."; });
+
 // ---------- init ----------
 loadStatus();
 loadSamples();
+loadScenarios();
 loadDashboard();
 
 // Deep link from the browser extension: /#analysis=<id> opens that report.
