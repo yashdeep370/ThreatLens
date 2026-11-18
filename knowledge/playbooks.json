@@ -1,0 +1,119 @@
+{
+  "DoS": {
+    "title": "Denial of Service (DoS)",
+    "severity": "Critical",
+    "mitre": ["T1499", "T1498"],
+    "summary": "A single source floods a service with requests or holds connections open (e.g. Hulk, GoldenEye, Slowloris, Slowhttptest) so legitimate users cannot be served.",
+    "impact": "Service slowdown or outage, exhausted server resources (CPU, memory, connection slots), possible cover for other attacks.",
+    "indicators": "Very high packet or request rate from few sources, many long-held or half-open HTTP connections, unusual idle times between packets, traffic concentrated on web ports (80/443).",
+    "recommendations": [
+      {"action": "Apply rate limiting per source IP at the web server or reverse proxy", "why": "Caps how many requests one client can make, which directly limits a single-source flood."},
+      {"action": "Tune connection timeouts and maximum concurrent connections", "why": "Slow attacks (Slowloris, Slowhttptest) work by holding connections open; shorter timeouts free those slots."},
+      {"action": "Place the service behind a CDN or Web Application Firewall (WAF)", "why": "These absorb and filter abusive traffic before it reaches your server."},
+      {"action": "Temporarily block the offending source after confirming it is malicious", "why": "Stops the current attack; confirm first to avoid blocking legitimate users behind shared IPs."},
+      {"action": "Monitor server resources and set alerts for traffic spikes", "why": "Early warning shortens the time to respond to the next attack."}
+    ]
+  },
+  "DDoS": {
+    "title": "Distributed Denial of Service (DDoS)",
+    "severity": "Critical",
+    "mitre": ["T1498", "T1498.001", "T1498.002"],
+    "summary": "Many sources flood a target at the same time, overwhelming bandwidth or the service itself. Harder to stop than DoS because blocking one source does not help.",
+    "impact": "Full service outage, saturated network links, costs from scaling or bandwidth, business disruption.",
+    "indicators": "Large volume of short flows from many sources toward the same destination, high packet rate, abnormal packet size patterns, sudden traffic surge compared to baseline.",
+    "recommendations": [
+      {"action": "Enable a DDoS protection service (CDN / cloud scrubbing)", "why": "Distributed floods exceed what a single server can filter; providers absorb traffic across their global network."},
+      {"action": "Apply upstream traffic filtering with your ISP or hosting provider", "why": "Filtering before traffic reaches your link prevents bandwidth saturation."},
+      {"action": "Use rate limiting and geo / reputation-based filtering at the edge", "why": "Reduces the volume that reaches the application while keeping legitimate traffic flowing."},
+      {"action": "Scale infrastructure horizontally (load balancer, autoscaling)", "why": "Buys time and capacity while mitigation is put in place."},
+      {"action": "Prepare an incident response plan for availability attacks", "why": "Knowing who to call and what to switch on reduces downtime."}
+    ]
+  },
+  "BruteForce": {
+    "title": "Brute-Force Authentication Attack",
+    "severity": "High",
+    "mitre": ["T1110", "T1110.001", "T1110.003"],
+    "summary": "An automated tool repeatedly tries usernames and passwords against a login service (e.g. FTP or SSH) hoping to guess valid credentials.",
+    "impact": "Account compromise, unauthorized access to systems and data, use of the compromised account for further attacks.",
+    "indicators": "Many short, similar connections from the same source to an authentication port (21 FTP, 22 SSH), consistent packet sizes, high connection rate. Flow data cannot see whether a login succeeded; that must be confirmed in authentication logs.",
+    "recommendations": [
+      {"action": "Review authentication logs for the targeted service", "why": "Network flows show the pattern but not login success; logs confirm whether any account was accessed."},
+      {"action": "Enable multi-factor authentication (MFA)", "why": "A guessed password alone is then not enough to log in."},
+      {"action": "Add account lockout or login rate limiting (e.g. fail2ban)", "why": "Slows automated guessing to the point where it becomes impractical."},
+      {"action": "Use key-based SSH authentication and disable password login", "why": "Removes the password attack surface for SSH entirely."},
+      {"action": "Enforce a strong password policy and check for reused passwords", "why": "Guessing tools rely on common and leaked passwords."},
+      {"action": "Block the source IP after confirming malicious activity", "why": "Stops the current attempt; attackers may rotate IPs, so combine with the measures above."}
+    ]
+  },
+  "PortScan": {
+    "title": "Port / Network Scanning",
+    "severity": "High",
+    "mitre": ["T1046", "T1595.001"],
+    "summary": "A source probes many ports or hosts to discover which services are running. Scanning is usually reconnaissance before an actual attack.",
+    "impact": "Exposure of running services and versions to an attacker, often followed by exploitation attempts against what was found.",
+    "indicators": "Many very short flows from one source across many destination ports, few packets per flow, little or no payload data, connections that end right after the handshake.",
+    "recommendations": [
+      {"action": "Review firewall rules and allow only required ports", "why": "Every unnecessary open port is something a scanner can find and attack."},
+      {"action": "Close or disable services that are not needed", "why": "Reduces the attack surface discovered by the scan."},
+      {"action": "Segment the network so internal services are not reachable from outside", "why": "Limits what a scanner can reach even if it gets a foothold."},
+      {"action": "Monitor the scanning source for follow-up activity", "why": "Scans often precede exploitation; watching the source gives early warning."},
+      {"action": "Patch the services that are exposed", "why": "Attackers will look for known vulnerabilities in the versions they discovered."}
+    ]
+  },
+  "Anomaly": {
+    "title": "Anomalous Traffic",
+    "severity": "Medium",
+    "mitre": [],
+    "summary": "Traffic that the anomaly detector (Isolation Forest trained only on normal traffic) considers unusual, but that does not match a known attack class. It may be a new attack, misconfiguration, or simply rare but legitimate behavior.",
+    "impact": "Unknown. Needs investigation before conclusions are drawn.",
+    "indicators": "Flow statistics far from the normal-traffic baseline. The detector is calibrated to flag about 1% of normal traffic, so it is only reported as an incident when the anomaly rate is clearly above that noise level.",
+    "recommendations": [
+      {"action": "Investigate the source and destination of the unusual flows", "why": "Identifying who is talking to what is the first step to deciding if this is benign."},
+      {"action": "Compare against the normal baseline and recent changes", "why": "New software, backups or deployments often explain unusual traffic."},
+      {"action": "Review related system and application logs", "why": "Logs give context that flow statistics alone cannot provide."},
+      {"action": "Keep monitoring the activity over time", "why": "A one-off may be noise; a persistent pattern deserves escalation."}
+    ]
+  },
+  "Phishing": {
+    "title": "Phishing URL",
+    "severity": "High",
+    "mitre": ["T1566", "T1566.002"],
+    "summary": "A link designed to trick users into entering credentials or personal data on a fake page that imitates a trusted brand.",
+    "impact": "Stolen credentials, account takeover, financial fraud, further compromise of the organization.",
+    "indicators": "Login / verify / account keywords, look-alike domains, many subdomains, raw IP addresses, '@' symbols, URL shorteners, long obfuscated URLs.",
+    "recommendations": [
+      {"action": "Do not enter credentials or personal data on the page", "why": "The page's purpose is to capture what you type."},
+      {"action": "Navigate to the real site by typing its address yourself", "why": "Avoids look-alike domains entirely."},
+      {"action": "Report the link to your security team or email provider", "why": "Helps block it for other users."},
+      {"action": "If credentials were entered, change the password immediately and enable MFA", "why": "Limits how long a stolen password stays useful."}
+    ]
+  },
+  "Malware": {
+    "title": "Malware Distribution URL",
+    "severity": "High",
+    "mitre": ["T1189", "T1204.001"],
+    "summary": "A link that delivers malicious software, either as a direct download or by exploiting the browser when the page is visited.",
+    "impact": "Infection of the device, data theft, ransomware, use of the device in further attacks.",
+    "indicators": "Direct links to executables or archives (.exe, .zip, .apk), raw IP hosts, unusual paths, obfuscated parameters.",
+    "recommendations": [
+      {"action": "Do not download or open files from the link", "why": "Execution of the file is usually the infection step."},
+      {"action": "Run an antivirus scan if anything was downloaded", "why": "Detects and removes known malware early."},
+      {"action": "Keep the browser and operating system updated", "why": "Drive-by attacks exploit known, already patched vulnerabilities."},
+      {"action": "Block the domain at DNS or firewall level for your network", "why": "Protects other users from the same link."}
+    ]
+  },
+  "Defacement": {
+    "title": "Defaced / Compromised Website URL",
+    "severity": "High",
+    "mitre": ["T1491.002"],
+    "summary": "The URL pattern resembles pages of websites that have been compromised and altered by attackers, often through vulnerable CMS components.",
+    "impact": "The site may host attacker content or malicious scripts; trust in the site is reduced.",
+    "indicators": "CMS-style query strings (e.g. index.php?option=com_...), many parameters, patterns typical of vulnerable plugins.",
+    "recommendations": [
+      {"action": "Avoid interacting with the page or entering any data", "why": "Compromised sites can serve malicious scripts."},
+      {"action": "If you own the site: patch the CMS, plugins and themes", "why": "Defacement usually exploits outdated components."},
+      {"action": "If you own the site: restore from a clean backup and rotate admin credentials", "why": "Removes attacker changes and any access they kept."},
+      {"action": "Deploy a WAF and enable file integrity monitoring", "why": "Detects and blocks future tampering."}
+    ]
+  }
+}

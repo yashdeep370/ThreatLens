@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ThreatLens - AI Threat Detection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" class="brand-icon"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m8.5 12 2.5 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <div><div class="brand-name">ThreatLens</div><div class="brand-sub">AI Security Assessment</div></div>
+    </div>
+    <nav>
+      <button class="nav-item active" data-view="dashboard"><span>◧</span> Dashboard</button>
+      <button class="nav-item" data-view="traffic"><span>⇅</span> Traffic Analysis</button>
+      <button class="nav-item" data-view="website"><span>⌘</span> Website Check</button>
+      <button class="nav-item" data-view="history"><span>☰</span> History</button>
+      <button class="nav-item" data-view="about"><span>ⓘ</span> How it works</button>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="sys-row"><span class="dot" id="dot-model"></span><span id="sys-model">Loading models…</span></div>
+      <div class="sys-row"><span class="dot" id="dot-llm"></span><span id="sys-llm">Checking AI…</span></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- DASHBOARD -->
+    <section class="view active" id="view-dashboard">
+      <header class="page-head">
+        <div><h1>Security Overview</h1><p class="muted">Observed risk from your most recent analyses</p></div>
+        <div class="head-actions">
+          <button class="btn" data-goto="website">Check a website</button>
+          <button class="btn primary" data-goto="traffic">Analyze traffic</button>
+        </div>
+      </header>
+      <div id="dash-empty" class="empty card">
+        <div class="empty-icon">🛡️</div>
+        <h2>No analyses yet</h2>
+        <p class="muted">Upload network flows or try a demo sample to see a security assessment.</p>
+        <button class="btn primary" data-goto="traffic">Start an analysis</button>
+      </div>
+      <div id="dash-content" hidden>
+        <div class="grid-hero">
+          <div class="card score-card">
+            <div class="card-label">Security posture</div>
+            <div id="dash-gauge"></div>
+            <div class="score-note">Observed-risk score · not a guarantee of security</div>
+          </div>
+          <div class="card status-card" id="dash-status"></div>
+        </div>
+        <div class="tiles" id="dash-tiles"></div>
+        <div class="grid-2">
+          <div class="card"><div class="card-label">Active incidents (latest traffic analysis)</div><div id="dash-incidents"></div></div>
+          <div class="card"><div class="card-label">Recent activity</div><div id="dash-recent"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TRAFFIC -->
+    <section class="view" id="view-traffic">
+      <header class="page-head">
+        <div><h1>Network Traffic Analysis</h1><p class="muted">Upload flows in CICFlowMeter CSV format · the ML model classifies every flow</p></div>
+      </header>
+      <div class="grid-2 upload-row">
+        <label class="dropzone card" id="dropzone">
+          <input type="file" id="file-input" accept=".csv" hidden>
+          <div class="drop-icon">⇪</div>
+          <div><strong>Drop a flow CSV here</strong> or click to browse</div>
+          <div class="muted small">CICFlowMeter / CIC-IDS2017 format</div>
+        </label>
+        <div class="card">
+          <div class="card-label">Demo samples <span class="muted small">(held-out test data, never seen in training)</span></div>
+          <div class="samples" id="samples"></div>
+        </div>
+      </div>
+      <div id="traffic-loading" class="loading" hidden><div class="spinner"></div>Analyzing flows…</div>
+      <div id="traffic-result"></div>
+    </section>
+
+    <!-- WEBSITE -->
+    <section class="view" id="view-website">
+      <header class="page-head">
+        <div><h1>Website Security Check</h1><p class="muted">URL threat classification + passive checks of HTTPS, certificate and security headers</p></div>
+      </header>
+      <form class="card url-form" id="url-form">
+        <input type="text" id="url-input" placeholder="https://example.com/login" autocomplete="off" required>
+        <label class="toggle"><input type="checkbox" id="url-live" checked><span>Live checks</span></label>
+        <button class="btn primary" type="submit">Check</button>
+      </form>
+      <div class="examples muted small">Try:
+        <button class="link" data-url="https://github.com">github.com</button>
+        <button class="link" data-url="https://en.wikipedia.org/wiki/Phishing">wikipedia.org</button>
+        <button class="link" data-url="http://paypal-login-verify.account-secure.xyz/signin">fake PayPal login</button>
+        <button class="link" data-url="http://103.21.44.5/bank/login.php">IP-based bank login</button>
+      </div>
+      <div id="url-loading" class="loading" hidden><div class="spinner"></div>Checking website…</div>
+      <div id="url-result"></div>
+    </section>
+
+    <!-- HISTORY -->
+    <section class="view" id="view-history">
+      <header class="page-head"><div><h1>Analysis History</h1><p class="muted">Last 50 analyses · click to reopen</p></div></header>
+      <div class="card"><div id="history-table"></div></div>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="view" id="view-about">
+      <header class="page-head"><div><h1>How it works</h1><p class="muted">Detect → Explain → Recommend → You decide</p></div></header>
+      <div class="card pipeline">
+        <div class="step"><b>1. Traffic</b><span>Network flows (CICFlowMeter features) or a URL</span></div>
+        <div class="arrow">→</div>
+        <div class="step"><b>2. ML detection</b><span>XGBoost classifier + Isolation Forest anomaly detector</span></div>
+        <div class="arrow">→</div>
+        <div class="step"><b>3. Evidence</b><span>Deviation from normal-traffic baseline, ports, confidence</span></div>
+        <div class="arrow">→</div>
+        <div class="step"><b>4. Threat intel</b><span>MITRE ATT&amp;CK techniques &amp; mitigations (RAG)</span></div>
+        <div class="arrow">→</div>
+        <div class="step"><b>5. Recommend</b><span>Mitigation steps with reasons · human decides</span></div>
+      </div>
+      <div class="grid-2">
+        <div class="card prose">
+          <h3>What we detect</h3>
+          <table class="table">
+            <tr><th>Threat</th><th>Severity</th><th>Source</th></tr>
+            <tr><td>DoS / DDoS</td><td><span class="sev Critical">Critical</span></td><td>Flow classifier</td></tr>
+            <tr><td>Brute force (FTP/SSH)</td><td><span class="sev High">High</span></td><td>Flow classifier</td></tr>
+            <tr><td>Port scanning</td><td><span class="sev High">High</span></td><td>Flow classifier</td></tr>
+            <tr><td>Phishing / malware / defaced URLs</td><td><span class="sev High">High</span></td><td>URL classifier</td></tr>
+            <tr><td>Traffic anomalies</td><td><span class="sev Medium">Medium</span></td><td>Isolation Forest</td></tr>
+          </table>
+        </div>
+        <div class="card prose">
+          <h3>What we promise, and what we don't</h3>
+          <p>ThreatLens gives an <b>evidence-backed assessment</b> of the traffic you analyze: detected threats, model confidence, supporting evidence, threat intelligence and recommended actions.</p>
+          <p>It does <b>not</b> guarantee that a system is secure. Models trained on lab data (CIC-IDS2017) can perform worse on other networks, and flow data cannot see packet contents or whether a login succeeded.</p>
+          <p>Nothing is blocked automatically. Every action is a recommendation for a human to decide.</p>
+        </div>
+      </div>
+      <div class="card"><div class="card-label">Model information</div><div id="about-models" class="muted">Loading…</div></div>
+    </section>
+
+    <footer class="foot muted small">ThreatLens provides an observed-risk assessment based on machine learning models. It is not a guarantee of security.</footer>
+  </main>
+</div>
+
+<!-- CHAT -->
+<button class="chat-fab" id="chat-fab" title="AI security assistant">💬 Ask AI</button>
+<aside class="chat" id="chat" hidden>
+  <div class="chat-head">
+    <div><b>Security Assistant</b><div class="small muted" id="chat-context">No analysis selected</div></div>
+    <button class="icon-btn" id="chat-close" aria-label="Close">✕</button>
+  </div>
+  <div class="chat-body" id="chat-body">
+    <div class="msg bot">Hi! I can explain detections, the evidence behind them, and what you should do. Select an analysis and ask away.</div>
+  </div>
+  <div class="chips" id="chat-chips">
+    <button class="chip">Why was this classified as a threat?</button>
+    <button class="chip">What should I do now?</button>
+    <button class="chip">How reliable is this result?</button>
+    <button class="chip">Explain the security score</button>
+  </div>
+  <form class="chat-input" id="chat-form">
+    <input type="text" id="chat-text" placeholder="Ask about this analysis…" autocomplete="off">
+    <button class="btn primary" type="submit">Send</button>
+  </form>
+</aside>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+              precision    recall  f1-score   support
+
+      Benign     0.9998    0.9993    0.9996     40000
+  BruteForce     1.0000    0.9995    0.9997      1830
+        DDoS     0.9999    0.9998    0.9998     10000
+         DoS     0.9985    0.9994    0.9990     10000
+    PortScan     0.9984    0.9994    0.9989     10000
+
+    accuracy                         0.9994     71830
+   macro avg     0.9993    0.9995    0.9994     71830
+weighted avg     0.9994    0.9994    0.9994     71830

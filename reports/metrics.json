@@ -1,0 +1,120 @@
+{
+  "dataset": {
+    "total_flows": 359150,
+    "train_flows": 287320,
+    "test_flows": 71830,
+    "class_counts": {
+      "Benign": 200000,
+      "DDoS": 50000,
+      "DoS": 50000,
+      "PortScan": 50000,
+      "BruteForce": 9150
+    },
+    "n_features": 69
+  },
+  "models": {
+    "RandomForest": {
+      "accuracy": 0.9990254768202701,
+      "macro_f1": 0.9990352157245196,
+      "weighted_f1": 0.9990254299924352,
+      "roc_auc_ovr": 0.9998663788057252,
+      "inference_ms_per_flow": 0.005639388835228503,
+      "per_class": {
+        "Benign": {
+          "precision": 0.999075231192202,
+          "recall": 0.999325,
+          "f1-score": 0.9992000999875016,
+          "support": 40000.0
+        },
+        "BruteForce": {
+          "precision": 1.0,
+          "recall": 0.9994535519125683,
+          "f1-score": 0.9997267012845039,
+          "support": 1830.0
+        },
+        "DDoS": {
+          "precision": 1.0,
+          "recall": 0.9999,
+          "f1-score": 0.999949997499875,
+          "support": 10000.0
+        },
+        "DoS": {
+          "precision": 0.9980994298289487,
+          "recall": 0.9978,
+          "f1-score": 0.9979496924538681,
+          "support": 10000.0
+        },
+        "PortScan": {
+          "precision": 0.998599299649825,
+          "recall": 0.9981,
+          "f1-score": 0.9983495873968492,
+          "support": 10000.0
+        }
+      },
+      "train_seconds": 49.42869619996054
+    },
+    "XGBoost": {
+      "accuracy": 0.9994292078518725,
+      "macro_f1": 0.9993980245616454,
+      "weighted_f1": 0.9994292954048805,
+      "roc_auc_ovr": 0.9999806792081316,
+      "inference_ms_per_flow": 0.004170654322389323,
+      "per_class": {
+        "Benign": {
+          "precision": 0.9997749043343421,
+          "recall": 0.99935,
+          "f1-score": 0.9995624070114899,
+          "support": 40000.0
+        },
+        "BruteForce": {
+          "precision": 1.0,
+          "recall": 0.9994535519125683,
+          "f1-score": 0.9997267012845039,
+          "support": 1830.0
+        },
+        "DDoS": {
+          "precision": 0.9998999899989999,
+          "recall": 0.9998,
+          "f1-score": 0.999849992499625,
+          "support": 10000.0
+        },
+        "DoS": {
+          "precision": 0.9985013487860925,
+          "recall": 0.9994,
+          "f1-score": 0.9989504722874707,
+          "support": 10000.0
+        },
+        "PortScan": {
+          "precision": 0.9984015984015984,
+          "recall": 0.9994,
+          "f1-score": 0.9989005497251374,
+          "support": 10000.0
+        }
+      },
+      "train_seconds": 30.66797939996468
+    }
+  },
+  "selected_model": "XGBoost",
+  "anomaly_detector": {
+    "threshold": -0.1389830926006114,
+    "benign_false_alarm_rate": 0.01035,
+    "attack_flag_rate_by_class": {
+      "BruteForce": 0.0,
+      "DDoS": 0.1555,
+      "DoS": 0.7023,
+      "PortScan": 0.0002
+    }
+  },
+  "top_features": {
+    "Idle Max": 0.2105971723794937,
+    "Idle Mean": 0.13806775212287903,
+    "act_data_pkt_fwd": 0.10292157530784607,
+    "Total Length of Fwd Packets": 0.097663015127182,
+    "Bwd Packet Length Std": 0.09222929179668427,
+    "Average Packet Size": 0.08303555846214294,
+    "Max Packet Length": 0.06239305064082146,
+    "Total Length of Bwd Packets": 0.051584355533123016,
+    "Total Backward Packets": 0.027685504406690598,
+    "Fwd Packet Length Mean": 0.022495590150356293
+  }
+}

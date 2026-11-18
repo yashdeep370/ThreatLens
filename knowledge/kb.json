@@ -1,0 +1,359 @@
+[
+  {
+    "id": "pb-DoS-overview",
+    "title": "Denial of Service (DoS)",
+    "threat": "DoS",
+    "source": "Project playbook",
+    "text": "A single source floods a service with requests or holds connections open (e.g. Hulk, GoldenEye, Slowloris, Slowhttptest) so legitimate users cannot be served. Impact: Service slowdown or outage, exhausted server resources (CPU, memory, connection slots), possible cover for other attacks. Indicators: Very high packet or request rate from few sources, many long-held or half-open HTTP connections, unusual idle times between packets, traffic concentrated on web ports (80/443)."
+  },
+  {
+    "id": "pb-DoS-actions",
+    "title": "Denial of Service (DoS): recommended actions",
+    "threat": "DoS",
+    "source": "Project playbook",
+    "text": "1. Apply rate limiting per source IP at the web server or reverse proxy - Caps how many requests one client can make, which directly limits a single-source flood. 2. Tune connection timeouts and maximum concurrent connections - Slow attacks (Slowloris, Slowhttptest) work by holding connections open; shorter timeouts free those slots. 3. Place the service behind a CDN or Web Application Firewall (WAF) - These absorb and filter abusive traffic before it reaches your server. 4. Temporarily block the offending source after confirming it is malicious - Stops the current attack; confirm first to avoid blocking legitimate users behind shared IPs. 5. Monitor server resources and set alerts for traffic spikes - Early warning shortens the time to respond to the next attack."
+  },
+  {
+    "id": "pb-DDoS-overview",
+    "title": "Distributed Denial of Service (DDoS)",
+    "threat": "DDoS",
+    "source": "Project playbook",
+    "text": "Many sources flood a target at the same time, overwhelming bandwidth or the service itself. Harder to stop than DoS because blocking one source does not help. Impact: Full service outage, saturated network links, costs from scaling or bandwidth, business disruption. Indicators: Large volume of short flows from many sources toward the same destination, high packet rate, abnormal packet size patterns, sudden traffic surge compared to baseline."
+  },
+  {
+    "id": "pb-DDoS-actions",
+    "title": "Distributed Denial of Service (DDoS): recommended actions",
+    "threat": "DDoS",
+    "source": "Project playbook",
+    "text": "1. Enable a DDoS protection service (CDN / cloud scrubbing) - Distributed floods exceed what a single server can filter; providers absorb traffic across their global network. 2. Apply upstream traffic filtering with your ISP or hosting provider - Filtering before traffic reaches your link prevents bandwidth saturation. 3. Use rate limiting and geo / reputation-based filtering at the edge - Reduces the volume that reaches the application while keeping legitimate traffic flowing. 4. Scale infrastructure horizontally (load balancer, autoscaling) - Buys time and capacity while mitigation is put in place. 5. Prepare an incident response plan for availability attacks - Knowing who to call and what to switch on reduces downtime."
+  },
+  {
+    "id": "pb-BruteForce-overview",
+    "title": "Brute-Force Authentication Attack",
+    "threat": "BruteForce",
+    "source": "Project playbook",
+    "text": "An automated tool repeatedly tries usernames and passwords against a login service (e.g. FTP or SSH) hoping to guess valid credentials. Impact: Account compromise, unauthorized access to systems and data, use of the compromised account for further attacks. Indicators: Many short, similar connections from the same source to an authentication port (21 FTP, 22 SSH), consistent packet sizes, high connection rate. Flow data cannot see whether a login succeeded; that must be confirmed in authentication logs."
+  },
+  {
+    "id": "pb-BruteForce-actions",
+    "title": "Brute-Force Authentication Attack: recommended actions",
+    "threat": "BruteForce",
+    "source": "Project playbook",
+    "text": "1. Review authentication logs for the targeted service - Network flows show the pattern but not login success; logs confirm whether any account was accessed. 2. Enable multi-factor authentication (MFA) - A guessed password alone is then not enough to log in. 3. Add account lockout or login rate limiting (e.g. fail2ban) - Slows automated guessing to the point where it becomes impractical. 4. Use key-based SSH authentication and disable password login - Removes the password attack surface for SSH entirely. 5. Enforce a strong password policy and check for reused passwords - Guessing tools rely on common and leaked passwords. 6. Block the source IP after confirming malicious activity - Stops the current attempt; attackers may rotate IPs, so combine with the measures above."
+  },
+  {
+    "id": "pb-PortScan-overview",
+    "title": "Port / Network Scanning",
+    "threat": "PortScan",
+    "source": "Project playbook",
+    "text": "A source probes many ports or hosts to discover which services are running. Scanning is usually reconnaissance before an actual attack. Impact: Exposure of running services and versions to an attacker, often followed by exploitation attempts against what was found. Indicators: Many very short flows from one source across many destination ports, few packets per flow, little or no payload data, connections that end right after the handshake."
+  },
+  {
+    "id": "pb-PortScan-actions",
+    "title": "Port / Network Scanning: recommended actions",
+    "threat": "PortScan",
+    "source": "Project playbook",
+    "text": "1. Review firewall rules and allow only required ports - Every unnecessary open port is something a scanner can find and attack. 2. Close or disable services that are not needed - Reduces the attack surface discovered by the scan. 3. Segment the network so internal services are not reachable from outside - Limits what a scanner can reach even if it gets a foothold. 4. Monitor the scanning source for follow-up activity - Scans often precede exploitation; watching the source gives early warning. 5. Patch the services that are exposed - Attackers will look for known vulnerabilities in the versions they discovered."
+  },
+  {
+    "id": "pb-Anomaly-overview",
+    "title": "Anomalous Traffic",
+    "threat": "Anomaly",
+    "source": "Project playbook",
+    "text": "Traffic that the anomaly detector (Isolation Forest trained only on normal traffic) considers unusual, but that does not match a known attack class. It may be a new attack, misconfiguration, or simply rare but legitimate behavior. Impact: Unknown. Needs investigation before conclusions are drawn. Indicators: Flow statistics far from the normal-traffic baseline. The detector is calibrated to flag about 1% of normal traffic, so it is only reported as an incident when the anomaly rate is clearly above that noise level."
+  },
+  {
+    "id": "pb-Anomaly-actions",
+    "title": "Anomalous Traffic: recommended actions",
+    "threat": "Anomaly",
+    "source": "Project playbook",
+    "text": "1. Investigate the source and destination of the unusual flows - Identifying who is talking to what is the first step to deciding if this is benign. 2. Compare against the normal baseline and recent changes - New software, backups or deployments often explain unusual traffic. 3. Review related system and application logs - Logs give context that flow statistics alone cannot provide. 4. Keep monitoring the activity over time - A one-off may be noise; a persistent pattern deserves escalation."
+  },
+  {
+    "id": "pb-Phishing-overview",
+    "title": "Phishing URL",
+    "threat": "Phishing",
+    "source": "Project playbook",
+    "text": "A link designed to trick users into entering credentials or personal data on a fake page that imitates a trusted brand. Impact: Stolen credentials, account takeover, financial fraud, further compromise of the organization. Indicators: Login / verify / account keywords, look-alike domains, many subdomains, raw IP addresses, '@' symbols, URL shorteners, long obfuscated URLs."
+  },
+  {
+    "id": "pb-Phishing-actions",
+    "title": "Phishing URL: recommended actions",
+    "threat": "Phishing",
+    "source": "Project playbook",
+    "text": "1. Do not enter credentials or personal data on the page - The page's purpose is to capture what you type. 2. Navigate to the real site by typing its address yourself - Avoids look-alike domains entirely. 3. Report the link to your security team or email provider - Helps block it for other users. 4. If credentials were entered, change the password immediately and enable MFA - Limits how long a stolen password stays useful."
+  },
+  {
+    "id": "pb-Malware-overview",
+    "title": "Malware Distribution URL",
+    "threat": "Malware",
+    "source": "Project playbook",
+    "text": "A link that delivers malicious software, either as a direct download or by exploiting the browser when the page is visited. Impact: Infection of the device, data theft, ransomware, use of the device in further attacks. Indicators: Direct links to executables or archives (.exe, .zip, .apk), raw IP hosts, unusual paths, obfuscated parameters."
+  },
+  {
+    "id": "pb-Malware-actions",
+    "title": "Malware Distribution URL: recommended actions",
+    "threat": "Malware",
+    "source": "Project playbook",
+    "text": "1. Do not download or open files from the link - Execution of the file is usually the infection step. 2. Run an antivirus scan if anything was downloaded - Detects and removes known malware early. 3. Keep the browser and operating system updated - Drive-by attacks exploit known, already patched vulnerabilities. 4. Block the domain at DNS or firewall level for your network - Protects other users from the same link."
+  },
+  {
+    "id": "pb-Defacement-overview",
+    "title": "Defaced / Compromised Website URL",
+    "threat": "Defacement",
+    "source": "Project playbook",
+    "text": "The URL pattern resembles pages of websites that have been compromised and altered by attackers, often through vulnerable CMS components. Impact: The site may host attacker content or malicious scripts; trust in the site is reduced. Indicators: CMS-style query strings (e.g. index.php?option=com_...), many parameters, patterns typical of vulnerable plugins."
+  },
+  {
+    "id": "pb-Defacement-actions",
+    "title": "Defaced / Compromised Website URL: recommended actions",
+    "threat": "Defacement",
+    "source": "Project playbook",
+    "text": "1. Avoid interacting with the page or entering any data - Compromised sites can serve malicious scripts. 2. If you own the site: patch the CMS, plugins and themes - Defacement usually exploits outdated components. 3. If you own the site: restore from a clean backup and rotate admin credentials - Removes attacker changes and any access they kept. 4. Deploy a WAF and enable file integrity monitoring - Detects and blocks future tampering."
+  },
+  {
+    "id": "mitre-T1110.001-BruteForce",
+    "title": "MITRE ATT&CK T1110.001: Password Guessing",
+    "threat": "BruteForce",
+    "source": "MITRE ATT&CK T1110.001",
+    "text": "Adversaries with no prior knowledge of legitimate credentials within the system or environment may guess passwords to attempt access to accounts. Without knowledge of the password for an account, an adversary may opt to systematically guess the password using a repetitive or iterative mechanism. An adversary may guess login credentials without prior knowledge of system or environment passwords during an operation by using a list of common passwords. Password guessing may or may not take into account the target's policies on password complexity or use policies that may lock accounts out after a number of failed attempts. Guessing passwords can be a risky option because it could cause numerous authentication failures and account lockouts, depending on the organization's login failure policies. Typically, management services over commonly used ports are used when guessing passwords. Commonly targeted services include the following: * SSH (22/TCP) * Telnet (23/TCP) * FTP (21/TCP) * NetBIOS / SMB / Samba (139/TCP & 445/TCP) * LDAP (389/TCP) * Kerberos (88/TCP) * RDP / Terminal Services (3389/TCP) * HTTP/HTTP Management Services (80/TCP & 443/TCP) * MSSQL (1433/TCP) * Oracle (1521/TCP) * MySQL (3306/TCP) * VNC (5900/TCP) * SNMP (161/UDP and 162/TCP/UDP) In addition to management services, adversaries may \"target single sign-on (SSO) and cloud-based applications utilizing federated authentication protocols,\" as well as externally facing email applications, such as Office 365. Furthe..."
+  },
+  {
+    "id": "mitre-T1110.001-BruteForce-mitigations",
+    "title": "MITRE ATT&CK T1110.001 mitigations",
+    "threat": "BruteForce",
+    "source": "MITRE ATT&CK T1110.001",
+    "text": "Update Software: Upgrade management services to the latest supported and compatible version. Specifically, any version providing increased password complexity or policy enforcement preventing default or weak passwords. | Multi-factor Authentication: Use multi-factor authentication. Where possible, also enable multi-factor authentication on externally facing services. | Password Policies: Refer to NIST guidelines when creating password policies. | Account Use Policies: Set account lockout policies after a certain number of failed login attempts to prevent passwords from being guessed. Too strict a policy may create a denial of service condition and render environments un-usable, with all accounts used in the brute force being locked-out. Use conditional access policies to block logins from non-compliant devices or from outside defined organization IP ranges. Consider blocking risky authentication requests, such as those originating from anonymizing services/proxies."
+  },
+  {
+    "id": "mitre-T1498.001-DDoS",
+    "title": "MITRE ATT&CK T1498.001: Direct Network Flood",
+    "threat": "DDoS",
+    "source": "MITRE ATT&CK T1498.001",
+    "text": "Adversaries may attempt to cause a denial of service (DoS) by directly sending a high-volume of network traffic to a target. This DoS attack may also reduce the availability and functionality of the targeted system(s) and network. Direct Network Floods are when one or more systems are used to send a high-volume of network packets towards the targeted service's network. Almost any network protocol may be used for flooding. Stateless protocols such as UDP or ICMP are commonly used but stateful protocols such as TCP can be used as well. Botnets are commonly used to conduct network flooding attacks against networks and services. Large botnets can generate a significant amount of traffic from systems spread across the global Internet. Adversaries may have the resources to build out and control their own botnet infrastructure or may rent time on an existing botnet to conduct an attack. In some of the worst cases for distributed DoS (DDoS), so many systems are used to generate the flood that each one only needs to send out a small amount of traffic to produce enough volume to saturate the target network. In such circumstances, distinguishing DDoS traffic from legitimate clients becomes exceedingly difficult. Botnets have been used in some of the most high-profile DDoS flooding attacks, such as the 2012 series of incidents that targeted major US banks."
+  },
+  {
+    "id": "mitre-T1498.001-DDoS-mitigations",
+    "title": "MITRE ATT&CK T1498.001 mitigations",
+    "threat": "DDoS",
+    "source": "MITRE ATT&CK T1498.001",
+    "text": "Filter Network Traffic: When flood volumes exceed the capacity of the network connection being targeted, it is typically necessary to intercept the incoming traffic upstream to filter out the attack traffic from the legitimate traffic. Such defenses can be provided by the hosting Internet Service Provider (ISP) or by a 3rd party such as a Content Delivery Network (CDN) or providers specializing in DoS mitigations. Depending on flood volume, on-premises filtering may be possible by blocking source addresses sourcing the attack, blocking ports that are being targeted, or blocking protocols being used for transport. As immediate response may require rapid engagement of 3rd parties, analyze the risk associated to critical resources being affected by Network DoS attacks and create a disaster recovery plan/business continuity plan to respond to incidents."
+  },
+  {
+    "id": "mitre-T1491.002-Defacement",
+    "title": "MITRE ATT&CK T1491.002: External Defacement",
+    "threat": "Defacement",
+    "source": "MITRE ATT&CK T1491.002",
+    "text": "An adversary may deface systems external to an organization in an attempt to deliver messaging, intimidate, or otherwise mislead an organization or users. External Defacement may ultimately cause users to distrust the systems and to question/discredit the system’s integrity. Externally-facing websites are a common victim of defacement; often targeted by adversary and hacktivist groups in order to push a political message or spread propaganda. External Defacement may be used as a catalyst to trigger events, or as a response to actions taken by an organization or government. Similarly, website defacement may also be used as setup, or a precursor, for future attacks such as Drive-by Compromise."
+  },
+  {
+    "id": "mitre-T1491.002-Defacement-mitigations",
+    "title": "MITRE ATT&CK T1491.002 mitigations",
+    "threat": "Defacement",
+    "source": "MITRE ATT&CK T1491.002",
+    "text": "Data Backup: Consider implementing IT disaster recovery plans that contain procedures for taking regular data backups that can be used to restore organizational data. Ensure backups are stored off system and is protected from common methods adversaries may use to gain access and destroy the backups to prevent recovery."
+  },
+  {
+    "id": "mitre-T1566.002-Phishing",
+    "title": "MITRE ATT&CK T1566.002: Spearphishing Link",
+    "threat": "Phishing",
+    "source": "MITRE ATT&CK T1566.002",
+    "text": "Adversaries may send spearphishing emails with a malicious link in an attempt to gain access to victim systems. Spearphishing with a link is a specific variant of spearphishing. It is different from other forms of spearphishing in that it employs the use of links to download malware contained in email, instead of attaching malicious files to the email itself, to avoid defenses that may inspect email attachments. Spearphishing may also involve social engineering techniques, such as posing as a trusted source. All forms of spearphishing are electronically delivered social engineering targeted at a specific individual, company, or industry. In this case, the malicious emails contain links. Generally, the links will be accompanied by social engineering text and require the user to actively click or copy and paste a URL into a browser, leveraging User Execution. The visited website may compromise the web browser using an exploit, or the user will be prompted to download applications, documents, zip files, or even executables depending on the pretext for the email in the first place. Adversaries may also include links that are intended to interact directly with an email reader, including embedded images intended to exploit the end system directly. Additionally, adversaries may use seemingly benign links that abuse special characters to mimic legitimate websites (known as an \"IDN homograph attack\"). URLs may also be obfuscated by taking advantage of quirks in the URL schema, such as..."
+  },
+  {
+    "id": "mitre-T1566.002-Phishing-mitigations",
+    "title": "MITRE ATT&CK T1566.002 mitigations",
+    "threat": "Phishing",
+    "source": "MITRE ATT&CK T1566.002",
+    "text": "Software Configuration: Use anti-spoofing and email authentication mechanisms to filter messages based on validity checks of the sender domain (using SPF) and integrity of messages (using DKIM). Enabling these mechanisms within an organization (through policies such as DMARC) may enable recipients (intra-org and cross domain) to perform similar message filtering and validation.. Furthermore, policies may enforce / install browser extensions that protect against IDN and homograph attacks. | Restrict Web-Based Content: Determine if certain websites that can be used for spearphishing are necessary for business operations and consider blocking access if activity cannot be monitored well or if it poses a significant risk. | Audit: Audit applications and their permissions to ensure access to data and resources are limited based upon necessity and principle of least privilege. | User Account Management: Azure AD Administrators apply limitations upon the ability for users to grant consent to unfamiliar or unverified third-party applications. | User Training: Users can be trained to identify social engineering techniques and spearphishing emails with malicious links which includes phishing for consent with OAuth 2.0. Additionally, users may perform visual checks of the domains they visit; however, homographs in ASCII and in IDN domains and URL schema obfuscation may render manual checks difficult. Use email warning banners to alert users when emails contain links from external senders..."
+  },
+  {
+    "id": "mitre-T1498.002-DDoS",
+    "title": "MITRE ATT&CK T1498.002: Reflection Amplification",
+    "threat": "DDoS",
+    "source": "MITRE ATT&CK T1498.002",
+    "text": "Adversaries may attempt to cause a denial of service (DoS) by reflecting a high-volume of network traffic to a target. This type of Network DoS takes advantage of a third-party server intermediary that hosts and will respond to a given spoofed source IP address. This third-party server is commonly termed a reflector. An adversary accomplishes a reflection attack by sending packets to reflectors with the spoofed address of the victim. Similar to Direct Network Floods, more than one system may be used to conduct the attack, or a botnet may be used. Likewise, one or more reflectors may be used to focus traffic on the target. This Network DoS attack may also reduce the availability and functionality of the targeted system(s) and network. Reflection attacks often take advantage of protocols with larger responses than requests in order to amplify their traffic, commonly known as a Reflection Amplification attack. Adversaries may be able to generate an increase in volume of attack traffic that is several orders of magnitude greater than the requests sent to the amplifiers. The extent of this increase will depend upon many variables, such as the protocol in question, the technique used, and the amplifying servers that actually produce the amplification in attack volume. Two prominent protocols that have enabled Reflection Amplification Floods are DNS and NTP, though the use of several others in the wild has been documented. In particular, the memcache protocol showed itself to be a p..."
+  },
+  {
+    "id": "mitre-T1498.002-DDoS-mitigations",
+    "title": "MITRE ATT&CK T1498.002 mitigations",
+    "threat": "DDoS",
+    "source": "MITRE ATT&CK T1498.002",
+    "text": "Filter Network Traffic: When flood volumes exceed the capacity of the network connection being targeted, it is typically necessary to intercept the incoming traffic upstream to filter out the attack traffic from the legitimate traffic. Such defenses can be provided by the hosting Internet Service Provider (ISP) or by a 3rd party such as a Content Delivery Network (CDN) or providers specializing in DoS mitigations. Depending on flood volume, on-premises filtering may be possible by blocking source addresses sourcing the attack, blocking ports that are being targeted, or blocking protocols being used for transport. As immediate response may require rapid engagement of 3rd parties, analyze the risk associated to critical resources being affected by Network DoS attacks and create a disaster recovery plan/business continuity plan to respond to incidents."
+  },
+  {
+    "id": "mitre-T1110.003-BruteForce",
+    "title": "MITRE ATT&CK T1110.003: Password Spraying",
+    "threat": "BruteForce",
+    "source": "MITRE ATT&CK T1110.003",
+    "text": "Adversaries may use a single or small list of commonly used passwords against many different accounts to attempt to acquire valid account credentials. Password spraying uses one password (e.g. 'Password01'), or a small list of commonly used passwords, that may match the complexity policy of the domain. Logins are attempted with that password against many different accounts on a network to avoid account lockouts that would normally occur when brute forcing a single account with many passwords. Typically, management services over commonly used ports are used when password spraying. Commonly targeted services include the following: * SSH (22/TCP) * Telnet (23/TCP) * FTP (21/TCP) * NetBIOS / SMB / Samba (139/TCP & 445/TCP) * LDAP (389/TCP) * Kerberos (88/TCP) * RDP / Terminal Services (3389/TCP) * HTTP/HTTP Management Services (80/TCP & 443/TCP) * MSSQL (1433/TCP) * Oracle (1521/TCP) * MySQL (3306/TCP) * VNC (5900/TCP) In addition to management services, adversaries may \"target single sign-on (SSO) and cloud-based applications utilizing federated authentication protocols,\" as well as externally facing email applications, such as Office 365. In order to avoid detection thresholds, adversaries may deliberately throttle password spraying attempts to avoid triggering security alerting. Additionally, adversaries may leverage LDAP and Kerberos authentication attempts, which are less likely to trigger high-visibility events such as Windows \"logon failure\" event ID 4625 that is commonly ..."
+  },
+  {
+    "id": "mitre-T1110.003-BruteForce-mitigations",
+    "title": "MITRE ATT&CK T1110.003 mitigations",
+    "threat": "BruteForce",
+    "source": "MITRE ATT&CK T1110.003",
+    "text": "Multi-factor Authentication: Use multi-factor authentication. Where possible, also enable multi-factor authentication on externally facing services. | Password Policies: Refer to NIST guidelines when creating password policies. | Account Use Policies: Set account lockout policies after a certain number of failed login attempts to prevent passwords from being guessed. Too strict a policy may create a denial of service condition and render environments un-usable, with all accounts used in the brute force being locked-out. Use conditional access policies to block logins from non-compliant devices or from outside defined organization IP ranges. Consider blocking risky authentication requests, such as those originating from anonymizing services/proxies."
+  },
+  {
+    "id": "mitre-T1566-Phishing",
+    "title": "MITRE ATT&CK T1566: Phishing",
+    "threat": "Phishing",
+    "source": "MITRE ATT&CK T1566",
+    "text": "Adversaries may send phishing messages to gain access to victim systems. All forms of phishing are electronically delivered social engineering. Phishing can be targeted, known as spearphishing. In spearphishing, a specific individual, company, or industry will be targeted by the adversary. More generally, adversaries can conduct non-targeted phishing, such as in mass malware spam campaigns. Adversaries may send victims emails containing malicious attachments or links, typically to execute malicious code on victim systems. Phishing may also be conducted via third-party services (like social media platforms) or delivered via calendar invites. Phishing may also involve social engineering techniques, such as posing as a trusted source, as well as evasive techniques such as removing or manipulating emails or metadata/headers from compromised accounts being abused to send messages (e.g., Email Hiding Rules). Another way to accomplish this is by Email Spoofing the identity of the sender, which can be used to fool both the human recipient as well as automated security tools, or by including the intended target as a party to an existing email thread that includes malicious files or links (i.e., \"thread hijacking\"). Victims may also receive phishing messages that instruct them to call a phone number where they are directed to visit a malicious URL, download malware, or install adversary-accessible remote management tools onto their computer (i.e., User Execution)."
+  },
+  {
+    "id": "mitre-T1566-Phishing-mitigations",
+    "title": "MITRE ATT&CK T1566 mitigations",
+    "threat": "Phishing",
+    "source": "MITRE ATT&CK T1566",
+    "text": "Audit: Perform audits or scans of systems, permissions, insecure software, insecure configurations, etc. to identify potential weaknesses. | Network Intrusion Prevention: Network intrusion prevention systems and systems designed to scan and remove malicious email attachments or links can be used to block activity. | Software Configuration: Use anti-spoofing and email authentication mechanisms to filter messages based on validity checks of the sender domain (using SPF) and integrity of messages (using DKIM). Enabling these mechanisms within an organization (through policies such as DMARC) may enable recipients (intra-org and cross domain) to perform similar message filtering and validation. | Restrict Web-Based Content: Determine if certain websites or attachment types (ex: .scr, .exe, .pif, .cpl, etc.) that can be used for phishing are necessary for business operations and consider blocking access if activity cannot be monitored well or if it poses a significant risk. | Antivirus/Antimalware: Anti-virus can automatically quarantine suspicious files. | User Training: Users can be trained to identify social engineering techniques and phishing emails."
+  },
+  {
+    "id": "mitre-T1110-BruteForce",
+    "title": "MITRE ATT&CK T1110: Brute Force",
+    "threat": "BruteForce",
+    "source": "MITRE ATT&CK T1110",
+    "text": "Adversaries may use brute force techniques to gain access to accounts when passwords are unknown or when password hashes are obtained. Without knowledge of the password for an account or set of accounts, an adversary may systematically guess the password using a repetitive or iterative mechanism. Brute forcing passwords can take place via interaction with a service that will check the validity of those credentials or offline against previously acquired credential data, such as password hashes. Brute forcing credentials may take place at various points during a breach. For example, adversaries may attempt to brute force access to Valid Accounts within a victim environment leveraging knowledge gathered from other post-compromise behaviors such as OS Credential Dumping, Account Discovery, or Password Policy Discovery. Adversaries may also combine brute forcing activity with behaviors such as External Remote Services as part of Initial Access. If an adversary guesses the correct password but fails to log in to a compromised account due to location-based conditional access policies, they may change their infrastructure until they match the victim’s location and therefore bypass those policies."
+  },
+  {
+    "id": "mitre-T1110-BruteForce-mitigations",
+    "title": "MITRE ATT&CK T1110 mitigations",
+    "threat": "BruteForce",
+    "source": "MITRE ATT&CK T1110",
+    "text": "User Account Management: Proactively reset accounts that are known to be part of breached credentials either immediately, or after detecting bruteforce attempts. | Account Use Policies: Set account lockout policies after a certain number of failed login attempts to prevent passwords from being guessed. Too strict a policy may create a denial of service condition and render environments un-usable, with all accounts used in the brute force being locked-out. Use conditional access policies to block logins from non-compliant devices or from outside defined organization IP ranges. Consider blocking risky authentication requests, such as those originating from anonymizing services/proxies. | Multi-factor Authentication: Use multi-factor authentication. Where possible, also enable multi-factor authentication on externally facing services. | Password Policies: Refer to NIST guidelines when creating password policies."
+  },
+  {
+    "id": "mitre-T1499-DoS",
+    "title": "MITRE ATT&CK T1499: Endpoint Denial of Service",
+    "threat": "DoS",
+    "source": "MITRE ATT&CK T1499",
+    "text": "Adversaries may perform Endpoint Denial of Service (DoS) attacks to degrade or block the availability of services to users. Endpoint DoS can be performed by exhausting the system resources those services are hosted on or exploiting the system to cause a persistent crash condition. Example services include websites, email services, DNS, and web-based applications. Adversaries have been observed conducting DoS attacks for political purposes and to support other malicious activities, including distraction, hacktivism, and extortion. An Endpoint DoS denies the availability of a service without saturating the network used to provide access to the service. Adversaries can target various layers of the application stack that is hosted on the system used to provide the service. These layers include the Operating Systems (OS), server applications such as web servers, DNS servers, databases, and the (typically web-based) applications that sit on top of them. Attacking each layer requires different techniques that take advantage of bottlenecks that are unique to the respective components. A DoS attack may be generated by a single system or multiple systems spread across the internet, which is commonly referred to as a distributed DoS (DDoS). To perform DoS attacks against endpoint resources, several aspects apply to multiple methods, including IP address spoofing and botnets. Adversaries may use the original IP address of an attacking system, or spoof the source IP address to make the at..."
+  },
+  {
+    "id": "mitre-T1499-DoS-mitigations",
+    "title": "MITRE ATT&CK T1499 mitigations",
+    "threat": "DoS",
+    "source": "MITRE ATT&CK T1499",
+    "text": "Filter Network Traffic: Leverage services provided by Content Delivery Networks (CDN) or providers specializing in DoS mitigations to filter traffic upstream from services. Filter boundary traffic by blocking source addresses sourcing the attack, blocking ports that are being targeted, or blocking protocols being used for transport. To defend against SYN floods, enable SYN Cookies."
+  },
+  {
+    "id": "mitre-T1189-Malware",
+    "title": "MITRE ATT&CK T1189: Drive-by Compromise",
+    "threat": "Malware",
+    "source": "MITRE ATT&CK T1189",
+    "text": "Adversaries may gain access to a system through a user visiting a website over the normal course of browsing. Multiple ways of delivering exploit code to a browser exist (i.e., Drive-by Target), including: * A legitimate website is compromised, allowing adversaries to inject malicious code * Script files served to a legitimate website from a publicly writeable cloud storage bucket are modified by an adversary * Malicious ads are paid for and served through legitimate ad providers (i.e., Malvertising) * Built-in web application interfaces that allow user-controllable content are leveraged for the insertion of malicious scripts or iFrames (e.g., cross-site scripting) Browser push notifications may also be abused by adversaries and leveraged for malicious code injection via User Execution. By clicking \"allow\" on browser push notifications, users may be granting a website permission to run JavaScript code on their browser. Often the website used by an adversary is one visited by a specific community, such as government, a particular industry, or a particular region, where the goal is to compromise a specific user or set of users based on a shared interest. This kind of targeted campaign is often referred to a strategic web compromise or watering hole attack. There are several known examples of this occurring. Typical drive-by compromise process: 1. A user visits a website that is used to host the adversary controlled content. 2. Scripts automatically execute, typically searching ..."
+  },
+  {
+    "id": "mitre-T1189-Malware-mitigations",
+    "title": "MITRE ATT&CK T1189 mitigations",
+    "threat": "Malware",
+    "source": "MITRE ATT&CK T1189",
+    "text": "Exploit Protection: Security applications that look for behavior used during exploitation such as Windows Defender Exploit Guard (WDEG) and the Enhanced Mitigation Experience Toolkit (EMET) can be used to mitigate some exploitation behavior. Control flow integrity checking is another way to potentially identify and stop a software exploit from occurring. Many of these protections depend on the architecture and target application binary for compatibility. | Update Software: Ensuring that all browsers and plugins are kept updated can help prevent the exploit phase of this technique. Use modern browsers with security features turned on. | Application Isolation and Sandboxing: Browser sandboxes can be used to mitigate some of the impact of exploitation, but sandbox escapes may still exist. Other types of virtualization and application microsegmentation may also mitigate the impact of client-side exploitation. The risks of additional exploits and weaknesses in implementation may still exist for these types of systems. | Restrict Web-Based Content: Adblockers can help prevent malicious code served through ads from executing in the first place. Script blocking extensions can also help to prevent the execution of JavaScript. Consider disabling browser push notifications from certain applications and browsers. | User Training: Train users to be aware of access or manipulation attempts by an adversary to reduce the risk of successful spearphishing, social engineering, and other techniq..."
+  },
+  {
+    "id": "mitre-T1498-DoS",
+    "title": "MITRE ATT&CK T1498: Network Denial of Service",
+    "threat": "DoS",
+    "source": "MITRE ATT&CK T1498",
+    "text": "Adversaries may perform Network Denial of Service (DoS) attacks to degrade or block the availability of targeted resources to users. Network DoS can be performed by exhausting the network bandwidth services rely on. Example resources include specific websites, email services, DNS, and web-based applications. Adversaries have been observed conducting network DoS attacks for political purposes and to support other malicious activities, including distraction, hacktivism, and extortion. A Network DoS will occur when the bandwidth capacity of the network connection to a system is exhausted due to the volume of malicious traffic directed at the resource or the network connections and network devices the resource relies on. For example, an adversary may send 10Gbps of traffic to a server that is hosted by a network with a 1Gbps connection to the internet. This traffic can be generated by a single system or multiple systems spread across the internet, which is commonly referred to as a distributed DoS (DDoS). To perform Network DoS attacks several aspects apply to multiple methods, including IP address spoofing, and botnets. Adversaries may use the original IP address of an attacking system, or spoof the source IP address to make the attack traffic more difficult to trace back to the attacking system or to enable reflection. This can increase the difficulty defenders have in defending against the attack by reducing or eliminating the effectiveness of filtering by the source address o..."
+  },
+  {
+    "id": "mitre-T1498-DoS-mitigations",
+    "title": "MITRE ATT&CK T1498 mitigations",
+    "threat": "DoS",
+    "source": "MITRE ATT&CK T1498",
+    "text": "Filter Network Traffic: When flood volumes exceed the capacity of the network connection being targeted, it is typically necessary to intercept the incoming traffic upstream to filter out the attack traffic from the legitimate traffic. Such defenses can be provided by the hosting Internet Service Provider (ISP) or by a 3rd party such as a Content Delivery Network (CDN) or providers specializing in DoS mitigations. Depending on flood volume, on-premises filtering may be possible by blocking source addresses sourcing the attack, blocking ports that are being targeted, or blocking protocols being used for transport. As immediate response may require rapid engagement of 3rd parties, analyze the risk associated to critical resources being affected by Network DoS attacks and create a disaster recovery plan/business continuity plan to respond to incidents."
+  },
+  {
+    "id": "mitre-T1498-DDoS",
+    "title": "MITRE ATT&CK T1498: Network Denial of Service",
+    "threat": "DDoS",
+    "source": "MITRE ATT&CK T1498",
+    "text": "Adversaries may perform Network Denial of Service (DoS) attacks to degrade or block the availability of targeted resources to users. Network DoS can be performed by exhausting the network bandwidth services rely on. Example resources include specific websites, email services, DNS, and web-based applications. Adversaries have been observed conducting network DoS attacks for political purposes and to support other malicious activities, including distraction, hacktivism, and extortion. A Network DoS will occur when the bandwidth capacity of the network connection to a system is exhausted due to the volume of malicious traffic directed at the resource or the network connections and network devices the resource relies on. For example, an adversary may send 10Gbps of traffic to a server that is hosted by a network with a 1Gbps connection to the internet. This traffic can be generated by a single system or multiple systems spread across the internet, which is commonly referred to as a distributed DoS (DDoS). To perform Network DoS attacks several aspects apply to multiple methods, including IP address spoofing, and botnets. Adversaries may use the original IP address of an attacking system, or spoof the source IP address to make the attack traffic more difficult to trace back to the attacking system or to enable reflection. This can increase the difficulty defenders have in defending against the attack by reducing or eliminating the effectiveness of filtering by the source address o..."
+  },
+  {
+    "id": "mitre-T1498-DDoS-mitigations",
+    "title": "MITRE ATT&CK T1498 mitigations",
+    "threat": "DDoS",
+    "source": "MITRE ATT&CK T1498",
+    "text": "Filter Network Traffic: When flood volumes exceed the capacity of the network connection being targeted, it is typically necessary to intercept the incoming traffic upstream to filter out the attack traffic from the legitimate traffic. Such defenses can be provided by the hosting Internet Service Provider (ISP) or by a 3rd party such as a Content Delivery Network (CDN) or providers specializing in DoS mitigations. Depending on flood volume, on-premises filtering may be possible by blocking source addresses sourcing the attack, blocking ports that are being targeted, or blocking protocols being used for transport. As immediate response may require rapid engagement of 3rd parties, analyze the risk associated to critical resources being affected by Network DoS attacks and create a disaster recovery plan/business continuity plan to respond to incidents."
+  },
+  {
+    "id": "mitre-T1595.001-PortScan",
+    "title": "MITRE ATT&CK T1595.001: Scanning IP Blocks",
+    "threat": "PortScan",
+    "source": "MITRE ATT&CK T1595.001",
+    "text": "Adversaries may scan victim IP blocks to gather information that can be used during targeting. Public IP addresses may be allocated to organizations by block, or a range of sequential addresses. Adversaries may scan IP blocks in order to Gather Victim Network Information, such as which IP addresses are actively in use as well as more detailed information about hosts assigned these addresses. Scans may range from simple pings (ICMP requests and responses) to more nuanced scans that may reveal host software/versions via server banners or other network artifacts. Information from these scans may reveal opportunities for other forms of reconnaissance (ex: Search Open Websites/Domains or Search Open Technical Databases), establishing operational resources (ex: Develop Capabilities or Obtain Capabilities), and/or initial access (ex: External Remote Services)."
+  },
+  {
+    "id": "mitre-T1595.001-PortScan-mitigations",
+    "title": "MITRE ATT&CK T1595.001 mitigations",
+    "threat": "PortScan",
+    "source": "MITRE ATT&CK T1595.001",
+    "text": "Pre-compromise: This technique cannot be easily mitigated with preventive controls since it is based on behaviors performed outside of the scope of enterprise defenses and controls. Efforts should focus on minimizing the amount and sensitivity of data available to external parties."
+  },
+  {
+    "id": "mitre-T1046-PortScan",
+    "title": "MITRE ATT&CK T1046: Network Service Discovery",
+    "threat": "PortScan",
+    "source": "MITRE ATT&CK T1046",
+    "text": "Adversaries may attempt to get a listing of services running on remote hosts and local network infrastructure devices, including those that may be vulnerable to remote software exploitation. Common methods to acquire this information include port, vulnerability, and/or wordlist scans using tools that are brought onto a system. Within cloud environments, adversaries may attempt to discover services running on other cloud hosts. Additionally, if the cloud environment is connected to an on-premises environment, adversaries may be able to identify services running on non-cloud systems as well. Within macOS environments, adversaries may use the native Bonjour application to discover services running on other macOS hosts within a network. The Bonjour mDNSResponder daemon automatically registers and advertises a host’s registered services on the network. For example, adversaries can use a mDNS query (such as dns-sd -B _ssh._tcp .) to find other systems broadcasting the ssh service."
+  },
+  {
+    "id": "mitre-T1046-PortScan-mitigations",
+    "title": "MITRE ATT&CK T1046 mitigations",
+    "threat": "PortScan",
+    "source": "MITRE ATT&CK T1046",
+    "text": "Disable or Remove Feature or Program: Ensure that unnecessary ports and services are closed to prevent risk of discovery and potential exploitation. | Network Intrusion Prevention: Use network intrusion detection/prevention systems to detect and prevent remote service scans. | Network Segmentation: Ensure proper network segmentation is followed to protect critical servers and devices."
+  },
+  {
+    "id": "mitre-T1204.001-Malware",
+    "title": "MITRE ATT&CK T1204.001: Malicious Link",
+    "threat": "Malware",
+    "source": "MITRE ATT&CK T1204.001",
+    "text": "An adversary may rely upon a user clicking a malicious link in order to gain execution. Users may be subjected to social engineering to get them to click on a link that will lead to code execution. This user action will typically be observed as follow-on behavior from Spearphishing Link. Clicking on a link may also lead to other execution techniques such as exploitation of a browser or application vulnerability via Exploitation for Client Execution. Links may also lead users to download files that require execution via Malicious File."
+  },
+  {
+    "id": "mitre-T1204.001-Malware-mitigations",
+    "title": "MITRE ATT&CK T1204.001 mitigations",
+    "threat": "Malware",
+    "source": "MITRE ATT&CK T1204.001",
+    "text": "Network Intrusion Prevention: If a link is being visited by a user, network intrusion prevention systems and systems designed to scan and remove malicious downloads can be used to block activity. | User Training: Use user training as a way to bring awareness to common phishing and spearphishing techniques and how to raise suspicion for potentially malicious events. | Restrict Web-Based Content: If a link is being visited by a user, block unknown or unused files in transit by default that should not be downloaded or by policy from suspicious sites as a best practice to prevent some vectors, such as .scr, .exe, .pif, .cpl, etc. Some download scanning devices can open and analyze compressed and encrypted formats, such as zip and rar that may be used to conceal malicious files."
+  },
+  {
+    "id": "doc-0",
+    "title": "How threats are detected",
+    "threat": "General",
+    "source": "Project documentation",
+    "text": "Network traffic is analyzed as flows (one flow = one connection) with about 69 statistical features such as packet sizes, packet rates, durations and idle times, in the CICFlowMeter format. An XGBoost classifier trained on the CIC-IDS2017 dataset labels each flow as Benign, DoS, DDoS, BruteForce or PortScan. It was compared against a Random Forest and selected for its higher macro F1 score (0.9994 on a held-out test set of 71,830 flows). Flows predicted as Benign are also checked by an Isolation Forest anomaly detector trained only on normal traffic."
+  },
+  {
+    "id": "doc-1",
+    "title": "What the confidence value means",
+    "threat": "General",
+    "source": "Project documentation",
+    "text": "Confidence is the probability the classifier assigns to its predicted class, averaged over the flows in an incident. It reflects how strongly the traffic matches patterns learned from the training data. It is not a guarantee: traffic from a different network than the training data can be misclassified."
+  },
+  {
+    "id": "doc-2",
+    "title": "How the security score works",
+    "threat": "General",
+    "source": "Project documentation",
+    "text": "The security posture score starts at 100 and subtracts a penalty per incident. Penalty = severity weight (Critical 40, High 25, Medium 10) x mean confidence x volume factor (0.5 below 10 flows, 0.75 below 100 flows, 1.0 otherwise). Bands: 90-100 low observed risk, 70-89 moderate, 40-69 high, 0-39 critical. It is an observed-risk score for the analyzed traffic, not a guarantee that a system is secure."
+  },
+  {
+    "id": "doc-3",
+    "title": "Limitations of the system",
+    "threat": "General",
+    "source": "Project documentation",
+    "text": "The system detects known attack patterns it was trained on and unusual traffic, but cannot prove that a system is secure. Models trained on lab data (CIC-IDS2017) may perform worse on real networks. Flow data does not show packet contents or whether logins succeeded. URL analysis is based on the URL text and public page checks only. The system recommends actions but never blocks anything automatically; a human decides (human-in-the-loop)."
+  },
+  {
+    "id": "doc-4",
+    "title": "Website security headers",
+    "threat": "General",
+    "source": "Project documentation",
+    "text": "Strict-Transport-Security (HSTS) forces browsers to use HTTPS. Content-Security-Policy (CSP) restricts which scripts can run and reduces cross-site scripting (XSS) risk. X-Frame-Options or CSP frame-ancestors prevents clickjacking. X-Content-Type-Options: nosniff stops MIME type sniffing. Referrer-Policy limits what URL information is leaked to other sites. Permissions-Policy restricts browser features like camera or location. Missing headers are weaknesses in defense-in-depth, not proof of compromise."
+  }
+]

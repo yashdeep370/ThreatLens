@@ -1,0 +1,26 @@
+=== Lexical-XGBoost ===
+              precision    recall  f1-score   support
+
+      benign     0.8510    0.9636    0.9038     85616
+  defacement     0.8961    0.8621    0.8788     19062
+     malware     0.9794    0.8858    0.9303      4729
+    phishing     0.7768    0.3577    0.4898     18817
+
+    accuracy                         0.8568    128224
+   macro avg     0.8758    0.7673    0.8007    128224
+weighted avg     0.8516    0.8568    0.8403    128224
+
+
+=== Hybrid-CharNgram-SGD ===
+              precision    recall  f1-score   support
+
+      benign     0.9458    0.9575    0.9516     85616
+  defacement     0.9774    0.9925    0.9849     19062
+     malware     0.9718    0.9547    0.9632      4729
+    phishing     0.8045    0.7503    0.7765     18817
+
+    accuracy                         0.9322    128224
+   macro avg     0.9249    0.9138    0.9191    128224
+weighted avg     0.9308    0.9322    0.9313    128224
+
+Selected: Hybrid-CharNgram-SGD

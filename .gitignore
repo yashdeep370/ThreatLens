@@ -1,0 +1,22 @@
+# Secrets - never commit API keys
+.env
+
+# Large / regenerable data (download instructions in README)
+data/raw/
+data/processed/
+data/history.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Kept on purpose: models/ (18 MB, lets the app run right after cloning),
+# data/samples/ (demo CSVs), reports/, knowledge/
