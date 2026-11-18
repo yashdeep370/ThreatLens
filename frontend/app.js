@@ -508,7 +508,106 @@ function stopLive() {
 $("#live-start").addEventListener("click", startLive);
 $("#live-stop").addEventListener("click", () => { stopLive(); $("#live-progress-text").textContent = "Stopped."; });
 
+// ---------- browsing activity (real, from the extension) ----------
+const br = { events: [], source: null, donut: null, timeline: null };
+const LEVEL_COLORS = { safe: "#22c55e", warning: "#eab308", danger: "#ef4444" };
+const LEVEL_NAMES = { safe: "Safe", warning: "Caution", danger: "Dangerous" };
+const TIMELINE_MINUTES = 20;
+const clock = iso => new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+const minuteKey = d => d.toTimeString().slice(0, 5);
+
+function connectBrowsing() {
+  if (br.source) return;
+  br.source = new EventSource("/api/browsing/stream");
+  br.source.onopen = () => { $("#br-pill").hidden = false; };
+  br.source.onerror = () => { $("#br-pill").hidden = true; };  // EventSource reconnects by itself
+  br.source.addEventListener("init", e => { br.events = JSON.parse(e.data).events; renderBrowsing(); });
+  br.source.addEventListener("event", e => { br.events.push(JSON.parse(e.data)); renderBrowsing(true); });
+  br.source.addEventListener("clear", () => { br.events = []; renderBrowsing(); });
+}
+
+function renderBrowsing(fresh = false) {
+  const ev = br.events;
+  $("#br-empty").hidden = ev.length > 0;
+  const count = lvl => ev.filter(e => e.level === lvl).length;
+  const domains = {};
+  ev.forEach(e => { domains[e.host] = (domains[e.host] || 0) + 1; });
+  $("#br-total").textContent = num(ev.length);
+  $("#br-safe").textContent = num(count("safe"));
+  $("#br-warn").textContent = num(count("warning"));
+  $("#br-danger").textContent = num(count("danger"));
+  $("#br-domains").textContent = num(Object.keys(domains).length);
+
+  const recent = ev.slice(-60).reverse();
+  $("#br-feed").innerHTML = recent.length ? `<table class="table"><tr><th>Time</th><th>Site</th><th>Verdict</th><th>Reason</th></tr>
+    ${recent.map((e, i) => `<tr class="click feed-row" data-check-url="${esc(e.url)}" ${fresh && i === 0 ? "" : 'style="animation:none"'}>
+      <td class="small muted mono">${esc(clock(e.time))}</td>
+      <td><div class="host">${esc(e.host)}</div><div class="url">${esc(e.url)}</div></td>
+      <td><span class="lvl ${e.level}"></span>${e.blocked ? "<b>Blocked</b>" : LEVEL_NAMES[e.level]}<div class="small muted">${esc(e.label)} ${(e.confidence * 100).toFixed(0)}%</div></td>
+      <td class="small">${e.trusted ? `Reputable domain (${esc(e.trusted)})` : esc(e.flag || e.headline)}</td></tr>`).join("")}</table>`
+    : '<p class="muted" style="margin:0">No sites yet.</p>';
+
+  const dangerous = ev.filter(e => e.level === "danger").slice(-8).reverse();
+  $("#br-blocked").innerHTML = dangerous.length ? dangerous.map(e => `<div class="mini-incident"><div><b>${esc(e.host)}</b>
+      <div class="small muted">${esc(e.headline)} · ${esc(clock(e.time))}</div></div>
+      <span class="sev Critical">${e.blocked ? "Blocked" : "Danger"}</span></div>`).join("")
+    : '<p class="muted" style="margin:0">None so far.</p>';
+  const top = Object.entries(domains).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  $("#br-top").innerHTML = top.length ? top.map(([d, n]) => `<div class="bar-row" style="grid-template-columns:150px 1fr 34px">
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d)}</span>
+      <div class="bar"><span style="width:${(n / top[0][1] * 100).toFixed(0)}%"></span></div><span class="mono small">${n}</span></div>`).join("")
+    : '<p class="muted" style="margin:0">-</p>';
+
+  renderBrowsingCharts(count);
+}
+
+function renderBrowsingCharts(count) {
+  const levels = ["safe", "warning", "danger"];
+  const donutData = levels.map(count);
+  if (!br.donut) {
+    br.donut = new Chart($("#br-donut"), {
+      type: "doughnut",
+      data: { labels: levels.map(l => LEVEL_NAMES[l]), datasets: [{ data: donutData, backgroundColor: levels.map(l => LEVEL_COLORS[l]), borderWidth: 0 }] },
+      options: { cutout: "65%", maintainAspectRatio: false, plugins: { legend: { position: "right", labels: { color: "#c6cfe0", boxWidth: 12 } } } },
+    });
+  } else {
+    br.donut.data.datasets[0].data = donutData;
+    br.donut.update();
+  }
+
+  const now = new Date();
+  const minutes = [...Array(TIMELINE_MINUTES)].map((_, i) => new Date(now.getTime() - (TIMELINE_MINUTES - 1 - i) * 60000));
+  const buckets = Object.fromEntries(minutes.map(m => [minuteKey(m), { safe: 0, warning: 0, danger: 0 }]));
+  br.events.forEach(e => { const b = buckets[minuteKey(new Date(e.time))]; if (b) b[e.level]++; });
+  const labels = Object.keys(buckets);
+  const datasets = levels.map(l => ({ label: LEVEL_NAMES[l], data: labels.map(k => buckets[k][l]), backgroundColor: LEVEL_COLORS[l], borderRadius: 3 }));
+  if (!br.timeline) {
+    br.timeline = new Chart($("#br-timeline"), {
+      type: "bar", data: { labels, datasets },
+      options: { maintainAspectRatio: false, animation: { duration: 200 },
+        scales: { x: { stacked: true, ticks: { color: "#8b97b0", maxTicksLimit: 10 }, grid: { display: false } },
+                  y: { stacked: true, beginAtZero: true, ticks: { color: "#8b97b0", precision: 0 }, grid: { color: "#22304d" } } },
+        plugins: { legend: { labels: { color: "#c6cfe0", boxWidth: 12 } } } },
+    });
+  } else {
+    br.timeline.data.labels = labels;
+    br.timeline.data.datasets.forEach((ds, i) => { ds.data = datasets[i].data; });
+    br.timeline.update();
+  }
+}
+
+$("#br-clear").addEventListener("click", () => api("/api/browsing", { method: "DELETE" }).catch(() => {}));
+document.addEventListener("click", e => {
+  const row = e.target.closest("[data-check-url]");
+  if (!row) return;
+  show("website");
+  $("#url-input").value = row.dataset.checkUrl;
+  $("#url-form").requestSubmit();
+});
+setInterval(() => { if (br.timeline) renderBrowsingCharts(l => br.events.filter(e => e.level === l).length); }, 30000);
+
 // ---------- init ----------
+connectBrowsing();
 loadStatus();
 loadSamples();
 loadScenarios();

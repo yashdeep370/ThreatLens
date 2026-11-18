@@ -19,12 +19,13 @@ function isCheckable(url, backend) {
   }
 }
 
-async function checkUrl(url, { live = false, save = false } = {}) {
+// source "extension" = a real page navigation, logged on the live browsing dashboard.
+async function checkUrl(url, { live = false, save = false, source = null, block = false } = {}) {
   const { backend } = await getSettings();
   const res = await fetch(`${backend}/api/analyze/url`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url, live, save }),
+    body: JSON.stringify({ url, live, save, source, block }),
   });
   if (!res.ok) throw new Error(`Backend error ${res.status}`);
   return res.json();

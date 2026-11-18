@@ -18,6 +18,7 @@ from src.config import ROOT
 load_dotenv(ROOT / ".env")
 
 from backend import llm  # noqa: E402  (needs env loaded first)
+from backend.browsing import BrowsingLog  # noqa: E402
 from backend.detector import FlowDetector  # noqa: E402
 from backend.knowledge import KnowledgeBase  # noqa: E402
 from backend.live import SCENARIOS, LiveMonitor  # noqa: E402
@@ -33,6 +34,7 @@ kb = KnowledgeBase()
 detector = FlowDetector(kb)
 url_checker = UrlChecker(kb)
 live_monitor = LiveMonitor(detector, kb)
+browsing = BrowsingLog()
 
 app = FastAPI(title="AI Threat Detection & Security Assessment")
 
@@ -111,12 +113,29 @@ class UrlRequest(BaseModel):
     url: str = Field(min_length=3, max_length=2048)
     live: bool = True
     save: bool = True  # the browser extension's automatic checks pass False to keep history clean
+    source: str | None = None  # "extension" = a page navigation, shown on the live browsing dashboard
+    block: bool = False  # whether the extension will show its warning page for dangerous results
 
 
 @app.post("/api/analyze/url")
 def analyze_url(req: UrlRequest):
     result = url_checker.check(req.url, live=req.live)
+    if req.source == "extension":
+        browsing.add(result, blocked=req.block)
     return _remember(result) if req.save else result
+
+
+@app.get("/api/browsing/stream")
+def browsing_stream():
+    """Server-Sent Events: 'init' with recent events, then one 'event' per site visited."""
+    return StreamingResponse(browsing.stream(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+@app.delete("/api/browsing")
+def browsing_clear():
+    browsing.clear()
+    return {"cleared": True}
 
 
 @app.get("/api/history")

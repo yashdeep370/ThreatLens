@@ -19,6 +19,7 @@
     <nav>
       <button class="nav-item active" data-view="dashboard"><span>◧</span> Dashboard</button>
       <button class="nav-item" data-view="live"><span>◉</span> Live Monitor</button>
+      <button class="nav-item" data-view="browsing"><span>◎</span> Browsing Activity</button>
       <button class="nav-item" data-view="traffic"><span>⇅</span> Traffic Analysis</button>
       <button class="nav-item" data-view="website"><span>⌘</span> Website Check</button>
       <button class="nav-item" data-view="history"><span>☰</span> History</button>
@@ -91,6 +92,42 @@
         <div class="card"><div class="card-label">Alert feed</div><div id="live-alerts"><p class="muted" style="margin:0">No alerts yet.</p></div></div>
         <div class="card"><div class="card-label">Session totals</div><div id="live-totals"><p class="muted" style="margin:0">-</p></div>
           <div id="live-done" class="no-print" style="margin-top:12px"></div></div>
+      </div>
+    </section>
+
+    <!-- BROWSING -->
+    <section class="view" id="view-browsing">
+      <header class="page-head">
+        <div><h1>Browsing Activity <span class="live-pill" id="br-pill" hidden>● LIVE</span></h1>
+          <p class="muted">Real-time feed of the websites you visit, checked by the ThreatLens browser extension</p></div>
+        <div class="head-actions"><button class="btn" id="br-clear">Clear activity</button></div>
+      </header>
+      <div class="card" id="br-empty">
+        <div class="card-label">Waiting for the browser extension…</div>
+        <ol style="margin:0;padding-left:20px;color:#c6cfe0">
+          <li>Open <span class="mono">chrome://extensions</span>, enable <b>Developer mode</b>, click <b>Load unpacked</b> and select the <span class="mono">extension/</span> folder.</li>
+          <li>Browse any website. Each page you open appears here instantly.</li>
+          <li>Try a fake phishing link like <span class="mono">http://paypal-login-verify.account-secure.xyz/signin</span> to see it blocked.</li>
+        </ol>
+        <p class="muted small" style="margin:10px 0 0">Browsing activity is kept in server memory only. It is never saved to disk and is cleared when the server restarts.</p>
+      </div>
+      <div class="tiles tiles-5">
+        <div class="tile"><div class="l">Sites checked</div><div class="v" id="br-total">0</div></div>
+        <div class="tile"><div class="l">Safe</div><div class="v" style="color:var(--safe)" id="br-safe">0</div></div>
+        <div class="tile"><div class="l">Caution</div><div class="v" style="color:var(--moderate)" id="br-warn">0</div></div>
+        <div class="tile"><div class="l">Dangerous / blocked</div><div class="v" style="color:var(--critical)" id="br-danger">0</div></div>
+        <div class="tile"><div class="l">Unique domains</div><div class="v" id="br-domains">0</div></div>
+      </div>
+      <div class="grid-hero">
+        <div class="card"><div class="card-label">Verdicts</div><div style="height:200px"><canvas id="br-donut"></canvas></div></div>
+        <div class="card"><div class="card-label">Activity timeline (checks per minute)</div><div style="height:200px"><canvas id="br-timeline"></canvas></div></div>
+      </div>
+      <div class="grid-2 grid-wide-left">
+        <div class="card"><div class="card-label">Live feed · click a row for a full check</div><div id="br-feed" class="table-wrap"></div></div>
+        <div>
+          <div class="card"><div class="card-label">Threats blocked</div><div id="br-blocked"><p class="muted" style="margin:0">None so far.</p></div></div>
+          <div class="card"><div class="card-label">Most visited domains</div><div id="br-top"><p class="muted" style="margin:0">-</p></div></div>
+        </div>
       </div>
     </section>
 
