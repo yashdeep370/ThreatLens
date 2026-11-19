@@ -16,12 +16,23 @@ import re
 import time
 
 import requests
+import truststore
 
-TIMEOUT = 30
+# Use the operating system's certificate store instead of requests' bundled list:
+# antivirus HTTPS scanning (e.g. Avast) re-signs traffic with a root only the OS trusts.
+truststore.inject_into_ssl()
+
+TIMEOUT = 40
+MAX_MODEL_ATTEMPTS = 3  # per provider, so a failing chat answers (offline) within ~2 minutes
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+GEMINI_LIST_URL = "https://generativelanguage.googleapis.com/v1beta/models?pageSize=200"
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-GEMINI_MODELS = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.0-flash"]
+# Used only if model discovery fails. Google retires models for new keys over time,
+# so the live list from the API (see _gemini_models) is preferred.
+GEMINI_FALLBACK_MODELS = ["gemini-flash-latest", "gemini-flash-lite-latest", "gemini-2.5-flash"]
 GROQ_MODELS = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
+_FLASH_RE = re.compile(r"^models/gemini-(\d+(?:\.\d+)?)-flash(-lite)?$")
+_gemini_cache: list[str] | None = None
 
 
 class LLMUnavailable(Exception):
@@ -40,6 +51,10 @@ def _redact(text: str) -> str:
 
 class _ModelNotFound(Exception):
     pass
+
+
+class _Busy(Exception):
+    """Rate-limited or overloaded (429 / 5xx): another model may still work."""
 
 
 def _keys() -> dict:
@@ -80,9 +95,32 @@ def _post(url, headers, body):
         if r.status_code == 404 or (r.status_code == 400 and "model" in r.text.lower()
                                     and ("decommission" in r.text.lower() or "not found" in r.text.lower())):
             raise _ModelNotFound(r.text[:200])
+        if r.status_code in (429, 500, 502, 503, 504):
+            raise _Busy(f"HTTP {r.status_code}: {r.text[:200]}")
         if not r.ok:
             raise RuntimeError(f"HTTP {r.status_code}: {r.text[:300]}")
         return r.json()
+
+
+def _gemini_models(key) -> list[str]:
+    """Models this key can actually use: stable '-flash-lite' models first (fast
+    replies; explaining an existing analysis doesn't need the largest model), then
+    '-flash' models, newest version first within each group."""
+    global _gemini_cache
+    if _gemini_cache is not None:
+        return _gemini_cache
+    try:
+        r = requests.get(GEMINI_LIST_URL, headers={"x-goog-api-key": key}, timeout=15)
+        r.raise_for_status()
+        found = []
+        for m in r.json().get("models", []):
+            match = _FLASH_RE.match(m.get("name", ""))
+            if match and "generateContent" in m.get("supportedGenerationMethods", []):
+                found.append((not match.group(2), -float(match.group(1)), m["name"].split("/", 1)[1]))
+        _gemini_cache = [name for *_, name in sorted(found)] + GEMINI_FALLBACK_MODELS
+    except Exception:
+        return GEMINI_FALLBACK_MODELS  # don't cache: retry discovery on the next call
+    return _gemini_cache
 
 
 def _gemini(key, system, messages, model):
@@ -120,11 +158,12 @@ def chat(system: str, messages: list[dict]) -> tuple[str, str]:
     errors = []
     for provider in providers():
         call, models, env_model = (
-            (_gemini, GEMINI_MODELS, "GEMINI_MODEL") if provider == "gemini"
+            (_gemini, _gemini_models(keys["gemini"]), "GEMINI_MODEL") if provider == "gemini"
             else (_groq, GROQ_MODELS, "GROQ_MODEL")
         )
         override = os.getenv(env_model)
-        for model in ([override] if override else []) + models:
+        candidates = list(dict.fromkeys(([override] if override else []) + models))
+        for model in candidates[:MAX_MODEL_ATTEMPTS]:
             try:
                 answer = call(keys[provider], system, messages, model)
                 _last_error = None
@@ -132,7 +171,13 @@ def chat(system: str, messages: list[dict]) -> tuple[str, str]:
             except _ModelNotFound as e:
                 errors.append(f"{provider}/{model}: model unavailable ({e})")
                 continue
-            except Exception as e:  # network, auth, quota: try the next provider
+            except requests.exceptions.Timeout:
+                errors.append(f"{provider}/{model}: timed out after {TIMEOUT}s")
+                continue
+            except _Busy as e:
+                errors.append(f"{provider}/{model}: busy ({e})")
+                continue
+            except Exception as e:  # auth, quota, network: try the next provider
                 errors.append(f"{provider}/{model}: {e}")
                 break
     _last_error = _redact("; ".join(errors) or "No LLM API key configured")
