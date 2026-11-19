@@ -1,0 +1,4 @@
+# Extra dependencies for retraining (src/prepare_flows.py, src/train_*.py).
+-r requirements.txt
+pyarrow==24.0.0
+seaborn==0.13.2

@@ -249,7 +249,7 @@ class UrlChecker:
             "id": uuid.uuid4().hex[:10],
             "type": "url",
             "url": url,
-            "analyzed_at": datetime.now().isoformat(timespec="seconds"),
+            "analyzed_at": datetime.now().astimezone().isoformat(timespec="seconds"),
             "status": status,
             "model": model,
             "live": live_result,

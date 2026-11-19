@@ -220,7 +220,7 @@ class FlowDetector:
             "id": uuid.uuid4().hex[:10],
             "type": "flows",
             "filename": filename,
-            "analyzed_at": datetime.now().isoformat(timespec="seconds"),
+            "analyzed_at": datetime.now().astimezone().isoformat(timespec="seconds"),
             "model": self.model_name,
             "total_flows": total,
             "skipped_rows": skipped,

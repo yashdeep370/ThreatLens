@@ -3,6 +3,7 @@ real-time stream following a scripted attack timeline, classifying each
 one-second batch as it arrives. Clearly a simulation - real deployment would
 feed flows from CICFlowMeter running on a network interface instead.
 """
+import asyncio
 import json
 import time
 from datetime import datetime
@@ -49,7 +50,8 @@ class LiveMonitor:
     def _sse(self, event: str, data: dict) -> str:
         return f"event: {event}\ndata: {json.dumps(data)}\n\n"
 
-    def stream(self, scenario: str, speed: float, on_finish):
+    async def stream(self, scenario: str, speed: float, on_finish):
+        """Async generator: sleeping between ticks doesn't hold a server thread."""
         spec = SCENARIOS.get(scenario, SCENARIOS["timeline"])
         rng = np.random.default_rng()
         interval = 1.0 / max(0.5, min(speed, 5.0))
@@ -87,7 +89,7 @@ class LiveMonitor:
                     alerts.append({
                         "id": active_alerts[threat], "threat": threat, "title": pb.get("title", threat),
                         "severity": severity, "confidence": round(confidence, 4), "flows": int(n),
-                        "time": datetime.now().strftime("%H:%M:%S"), "evidence": evidence,
+                        "time": datetime.now().astimezone().isoformat(timespec="seconds"), "evidence": evidence,
                         "action": (pb.get("recommendations") or [{}])[0].get("action", ""),
                     })
             # waves that stopped this tick are no longer active
@@ -101,12 +103,12 @@ class LiveMonitor:
             score = round(max(0.0, 100 - LIVE_SCORE_SCALE * sum(window) / WINDOW_TICKS))
 
             yield self._sse("tick", {
-                "tick": tick + 1, "of": len(timeline), "time": datetime.now().strftime("%H:%M:%S"),
+                "tick": tick + 1, "of": len(timeline), "time": datetime.now().astimezone().isoformat(timespec="seconds"),
                 "flows": len(batch), "counts": {k: int(v) for k, v in counts.items()},
                 "totals": totals, "alerts": alerts, "active": sorted(active_alerts), "score": score,
                 "mean_confidence": round(float(conf.mean()), 4),
             })
-            time.sleep(max(0.0, interval - (time.perf_counter() - started)))
+            await asyncio.sleep(max(0.0, interval - (time.perf_counter() - started)))
 
         analysis = on_finish(pd.concat(seen, ignore_index=True), f"Live session - {spec['title']}")
         yield self._sse("done", {"analysis_id": analysis["id"], "score": analysis["score"]["value"],

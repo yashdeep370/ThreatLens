@@ -54,6 +54,7 @@ async function init() {
   $("#auto").checked = s.autoCheck;
   $("#notify").checked = s.notify;
   $("#block").checked = s.block;
+  $("#pairing").value = s.pairing;
 
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (tab && isCheckable(tab.url, s.backend)) runCheck(tab.url);
@@ -64,7 +65,7 @@ $("#settings-btn").addEventListener("click", () => { $("#settings").hidden = !$(
 $("#save").addEventListener("click", async () => {
   await chrome.storage.local.set({ backend: $("#backend").value.trim() || DEFAULT_BACKEND,
                                    autoCheck: $("#auto").checked, notify: $("#notify").checked,
-                                   block: $("#block").checked });
+                                   block: $("#block").checked, pairing: $("#pairing").value.trim() });
   $("#settings").hidden = true;
 });
 $("#manual").addEventListener("submit", e => {

@@ -2,7 +2,7 @@
 const DEFAULT_BACKEND = "http://127.0.0.1:8000";
 
 async function getSettings() {
-  const s = await chrome.storage.local.get({ backend: DEFAULT_BACKEND, autoCheck: true, notify: true, block: true });
+  const s = await chrome.storage.local.get({ backend: DEFAULT_BACKEND, autoCheck: true, notify: true, block: true, pairing: "" });
   s.backend = s.backend.replace(/\/+$/, "");
   return s;
 }
@@ -21,10 +21,13 @@ function isCheckable(url, backend) {
 
 // source "extension" = a real page navigation, logged on the live browsing dashboard.
 async function checkUrl(url, { live = false, save = false, source = null, block = false } = {}) {
-  const { backend } = await getSettings();
+  const { backend, pairing } = await getSettings();
+  const headers = { "Content-Type": "application/json" };
+  // Deployed server: the pairing code joins the website visitor's session.
+  if (pairing) headers["X-ThreatLens-Session"] = pairing;
   const res = await fetch(`${backend}/api/analyze/url`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({ url, live, save, source, block }),
   });
   if (!res.ok) throw new Error(`Backend error ${res.status}`);

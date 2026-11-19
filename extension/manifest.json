@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
   "name": "ThreatLens Website Guard",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Checks the websites you visit for phishing, malware and weak security, using your ThreatLens backend.",
   "permissions": ["tabs", "storage", "notifications"],
-  "host_permissions": ["http://127.0.0.1:8000/*", "http://localhost:8000/*"],
+  "host_permissions": ["http://127.0.0.1:8000/*", "http://localhost:8000/*", "https://*.hf.space/*"],
   "background": { "service_worker": "background.js" },
   "action": {
     "default_popup": "popup.html",

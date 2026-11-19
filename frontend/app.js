@@ -104,7 +104,12 @@ async function loadStatus() {
     $("#sys-model").textContent = `Models ready · ${s.flow_model}`;
     $("#dot-llm").className = `dot ${s.llm.available ? "ok" : "warn"}`;
     $("#sys-llm").textContent = s.llm.available ? `AI: ${s.llm.providers.join(" → ")}` : "AI: offline mode (no API key)";
-    $("#about-models").innerHTML = `Flow classifier: <b>${esc(s.flow_model)}</b> · classes: ${s.flow_classes.map(esc).join(", ")} ·
+    if (s.multi_user && s.session) {
+      $("#br-pair").hidden = false;
+      $("#br-code").textContent = s.session;
+      $("#br-origin").textContent = location.origin;
+    }
+    $("#about-models").innerHTML =`Flow classifier: <b>${esc(s.flow_model)}</b> · classes: ${s.flow_classes.map(esc).join(", ")} ·
       knowledge base: ${s.knowledge_chunks} chunks (MITRE ATT&amp;CK + playbooks) · chatbot: ${s.llm.available ? esc(s.llm.providers.join(", ")) : "offline knowledge-base mode"}`;
   } catch {
     $("#sys-model").textContent = "Backend unreachable";
@@ -454,7 +459,7 @@ function startLive() {
     const d = JSON.parse(e.data);
     live.total += d.flows;
     const c = live.chart;
-    c.data.labels.push(d.time);
+    c.data.labels.push(clock(d.time));
     c.data.datasets.forEach((ds, i) => ds.data.push(d.counts[LIVE_SERIES[i]] || 0));
     if (c.data.labels.length > LIVE_POINTS) { c.data.labels.shift(); c.data.datasets.forEach(ds => ds.data.shift()); }
     c.update();
@@ -476,7 +481,7 @@ function startLive() {
       $("#live-alert-count").textContent = live.alerts;
       $("#live-alerts").insertAdjacentHTML("afterbegin", `<div class="alert-item ${a.severity}" data-threat="${esc(a.threat)}">
         <div class="alert-top"><b>${esc(a.title)}</b><span class="sev ${a.severity}">${a.severity}</span></div>
-        <div class="small muted">${esc(a.time)} · ${a.flows} flows/s · confidence ${pct(a.confidence)}</div>
+        <div class="small muted">${esc(clock(a.time))} · ${a.flows} flows/s · confidence ${pct(a.confidence)}</div>
         ${a.evidence.length ? `<ul class="small" style="margin:6px 0 0;padding-left:18px">${a.evidence.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
         ${a.action ? `<div class="small" style="margin-top:6px">→ <b>Recommended:</b> ${esc(a.action)}</div>` : ""}</div>`);
     }
@@ -597,6 +602,13 @@ function renderBrowsingCharts(count) {
 }
 
 $("#br-clear").addEventListener("click", () => api("/api/browsing", { method: "DELETE" }).catch(() => {}));
+$("#br-copy").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText($("#br-code").textContent);
+    $("#br-copy").textContent = "Copied ✓";
+    setTimeout(() => { $("#br-copy").textContent = "Copy"; }, 1500);
+  } catch { /* clipboard blocked: the code is still visible to copy by hand */ }
+});
 document.addEventListener("click", e => {
   const row = e.target.closest("[data-check-url]");
   if (!row) return;

@@ -181,7 +181,7 @@ def _flow_report(a, mitre_names):
     blabel, bcolor = band(score)
 
     # ---- page 1: executive dashboard ----
-    fig = r.page("Security Assessment Dashboard", f"{a['filename']} · {a['analyzed_at'].replace('T', ' ')}")
+    fig = r.page("Security Assessment Dashboard", f"{a['filename']} · {a['analyzed_at'][:16].replace('T', ' ')}")
     r.banner(fig, a["status"])
     kpis = [("Security score", f"{score}/100", bcolor, blabel),
             ("Flows analyzed", f"{a['total_flows']:,}", ACCENT, f"model: {a['model']}"),
@@ -271,7 +271,7 @@ def _url_report(a):
     m, live = a["model"], a["live"]
     score = a["score"]["value"]
     blabel, bcolor = band(score)
-    fig = r.page("Website Security Report", a["analyzed_at"].replace("T", " "))
+    fig = r.page("Website Security Report", a["analyzed_at"][:16].replace("T", " "))
     r.banner(fig, a["status"])
     fig.text(0.03, 0.815, a["url"][:120], fontsize=9, color=MUTED, family="DejaVu Sans Mono")
 

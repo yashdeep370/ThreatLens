@@ -102,6 +102,14 @@
           <p class="muted">Real-time feed of the websites you visit, checked by the ThreatLens browser extension</p></div>
         <div class="head-actions"><button class="btn" id="br-clear">Clear activity</button></div>
       </header>
+      <div class="card pair-card" id="br-pair" hidden>
+        <div>
+          <div class="card-label" style="margin-bottom:6px">Connect your browser extension</div>
+          <div class="small muted">In the extension's ⚙ settings, set <b>Backend URL</b> to <span class="mono" id="br-origin"></span>
+            and paste this <b>pairing code</b>. Your activity is private to your session.</div>
+        </div>
+        <div class="pair-code"><span class="mono" id="br-code"></span><button class="btn small" id="br-copy">Copy</button></div>
+      </div>
       <div class="card" id="br-empty">
         <div class="card-label">Waiting for the browser extension…</div>
         <ol style="margin:0;padding-left:20px;color:#c6cfe0">

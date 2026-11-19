@@ -178,6 +178,9 @@ a.btn { text-decoration: none; display: inline-block; }
 #live-alerts { max-height: 360px; overflow-y: auto; }
 
 /* browsing activity */
+.pair-card { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; border-color: var(--accent); }
+.pair-code { display: flex; gap: 10px; align-items: center; }
+.pair-code .mono { font-size: 20px; letter-spacing: .06em; background: var(--bg); border: 1px dashed var(--accent); padding: 6px 12px; border-radius: 8px; }
 .tiles-5 { grid-template-columns: repeat(5, 1fr); }
 .grid-wide-left { grid-template-columns: 1.6fr 1fr; }
 .feed-row td { animation: slidein .35s ease-out; }

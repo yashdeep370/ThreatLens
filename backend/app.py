@@ -2,13 +2,14 @@
 
 Run:  python -m uvicorn backend.app:app --reload
 Open: http://127.0.0.1:8000
+
+Set THREATLENS_MULTI_USER=1 when deployed publicly (per-visitor sessions + rate limits).
 """
 import json
-from collections import OrderedDict
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -18,65 +19,108 @@ from src.config import ROOT
 load_dotenv(ROOT / ".env")
 
 from backend import llm  # noqa: E402  (needs env loaded first)
-from backend.browsing import BrowsingLog  # noqa: E402
 from backend.detector import FlowDetector  # noqa: E402
 from backend.knowledge import KnowledgeBase  # noqa: E402
 from backend.live import SCENARIOS, LiveMonitor  # noqa: E402
 from backend.report_pdf import build_pdf  # noqa: E402
+from backend.sessions import (  # noqa: E402
+    COOKIE, HEADER, LOCAL_SID, MULTI_USER, RateLimiter, SessionStore, new_sid, valid_sid,
+)
 from backend.url_checker import UrlChecker  # noqa: E402
 
 FRONTEND_DIR = ROOT / "frontend"
 SAMPLES_DIR = ROOT / "data" / "samples"
-HISTORY_PATH = ROOT / "data" / "history.json"
-MAX_HISTORY = 50
+MAX_UPLOAD_MB = 25
+SSE_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
 
 kb = KnowledgeBase()
 detector = FlowDetector(kb)
 url_checker = UrlChecker(kb)
 live_monitor = LiveMonitor(detector, kb)
-browsing = BrowsingLog()
+sessions = SessionStore()
 
-app = FastAPI(title="AI Threat Detection & Security Assessment")
+# Limits apply only when deployed (MULTI_USER). Keyed by client IP so clearing
+# cookies doesn't reset them; generous enough for a class sharing one network.
+limits = {
+    "chat": RateLimiter(30, 600),
+    "chat_global": RateLimiter(300, 3600),  # protects the free LLM quota as a whole
+    "url": RateLimiter(60, 60),
+    "flows": RateLimiter(20, 60),
+    "live": RateLimiter(10, 600),
+}
+
+app = FastAPI(title="ThreatLens - AI Threat Detection & Security Assessment")
 
 
-# ---------- history (persisted so a restart doesn't wipe the dashboard) ----------
-def _load_history() -> OrderedDict:
-    try:
-        return OrderedDict((a["id"], a) for a in json.loads(HISTORY_PATH.read_text(encoding="utf-8")))
-    except Exception:
-        return OrderedDict()
+# ---------- sessions & limits ----------
+@app.middleware("http")
+async def session_middleware(request: Request, call_next):
+    sid = request.headers.get(HEADER) or request.cookies.get(COOKIE)
+    created = None
+    if not MULTI_USER:
+        sid = LOCAL_SID
+    elif not valid_sid(sid):
+        sid = created = new_sid()
+    request.state.sid = sid
+    response = await call_next(request)
+    if created and not request.headers.get(HEADER):
+        https = request.headers.get("x-forwarded-proto", request.url.scheme) == "https"
+        # SameSite=None lets the cookie work inside the Hugging Face page iframe too.
+        response.set_cookie(COOKIE, created, max_age=30 * 86400, httponly=True,
+                            samesite="none" if https else "lax", secure=https)
+    return response
 
 
-history = _load_history()
+def session(request: Request):
+    return sessions.get(request.state.sid)
 
 
-def _remember(analysis: dict) -> dict:
-    history[analysis["id"]] = analysis
-    while len(history) > MAX_HISTORY:
-        history.popitem(last=False)
-    HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    HISTORY_PATH.write_text(json.dumps(list(history.values())), encoding="utf-8")
-    return analysis
+def client_ip(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for", "")
+    return forwarded.split(",")[0].strip() or (request.client.host if request.client else "unknown")
+
+
+def rate_limit(request: Request, *names: str):
+    ip = client_ip(request)
+    for name in names:
+        key = "all" if name.endswith("_global") else ip
+        if not limits[name].allow(key):
+            raise HTTPException(429, "Too many requests - please wait a few minutes and try again.")
+
+
+def find_analysis(request: Request, analysis_id: str) -> dict:
+    a = session(request).history.get(analysis_id)
+    if not a:
+        raise HTTPException(404, "Analysis not found")
+    return a
 
 
 # ---------- API ----------
 @app.get("/api/status")
-def status():
+def status(request: Request):
     return {
         "flow_model": detector.model_name,
         "flow_classes": detector.classes,
         "knowledge_chunks": len(kb.chunks),
         "llm": llm.status(),
-        "analyses": len(history),
+        "analyses": len(session(request).history),
+        "multi_user": MULTI_USER,
+        # the visitor's own id, shown as the extension pairing code when deployed
+        "session": request.state.sid if MULTI_USER else None,
     }
 
 
 @app.post("/api/analyze/flows")
-def analyze_flows(file: UploadFile = File(...)):
+def analyze_flows(request: Request, file: UploadFile = File(...)):
+    rate_limit(request, "flows")
     if not (file.filename or "").lower().endswith(".csv"):
         raise HTTPException(400, "Please upload a .csv file of network flows")
+    file.file.seek(0, 2)
+    if file.file.tell() > MAX_UPLOAD_MB * 1024 * 1024:
+        raise HTTPException(413, f"File too large - the limit is {MAX_UPLOAD_MB} MB")
+    file.file.seek(0)
     try:
-        return _remember(detector.analyze(file.file, file.filename))
+        return session(request).remember(detector.analyze(file.file, file.filename))
     except ValueError as e:
         raise HTTPException(422, str(e))
 
@@ -87,12 +131,13 @@ def list_samples():
 
 
 @app.post("/api/analyze/sample/{name}")
-def analyze_sample(name: str):
+def analyze_sample(request: Request, name: str):
+    rate_limit(request, "flows")
     path = SAMPLES_DIR / Path(name).name  # Path().name blocks ../ traversal
     if not path.is_file():
         raise HTTPException(404, "Sample not found")
     with path.open("rb") as f:
-        return _remember(detector.analyze(f, path.name))
+        return session(request).remember(detector.analyze(f, path.name))
 
 
 @app.get("/api/live/scenarios")
@@ -101,12 +146,14 @@ def live_scenarios():
 
 
 @app.get("/api/live/stream")
-def live_stream(scenario: str = "timeline", speed: float = 1.0):
+def live_stream(request: Request, scenario: str = "timeline", speed: float = 1.0):
     """Server-Sent Events: one 'tick' event per simulated second, then 'done' with
     the id of a full analysis of everything streamed (so reports and chat work on it)."""
-    on_finish = lambda df, name: _remember(detector.analyze_df(df, name))  # noqa: E731
-    return StreamingResponse(live_monitor.stream(scenario, speed, on_finish), media_type="text/event-stream",
-                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+    rate_limit(request, "live")
+    s = session(request)
+    on_finish = lambda df, name: s.remember(detector.analyze_df(df, name))  # noqa: E731
+    return StreamingResponse(live_monitor.stream(scenario, speed, on_finish),
+                             media_type="text/event-stream", headers=SSE_HEADERS)
 
 
 class UrlRequest(BaseModel):
@@ -118,30 +165,32 @@ class UrlRequest(BaseModel):
 
 
 @app.post("/api/analyze/url")
-def analyze_url(req: UrlRequest):
+def analyze_url(request: Request, req: UrlRequest):
+    if req.live:  # quick model-only checks from the extension are not limited
+        rate_limit(request, "url")
+    s = session(request)
     result = url_checker.check(req.url, live=req.live)
     if req.source == "extension":
-        browsing.add(result, blocked=req.block)
-    return _remember(result) if req.save else result
+        s.browsing.add(result, blocked=req.block)
+    return s.remember(result) if req.save else result
 
 
 @app.get("/api/browsing/stream")
-def browsing_stream():
+def browsing_stream(request: Request):
     """Server-Sent Events: 'init' with recent events, then one 'event' per site visited."""
-    return StreamingResponse(browsing.stream(), media_type="text/event-stream",
-                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+    return StreamingResponse(session(request).browsing.stream(), media_type="text/event-stream", headers=SSE_HEADERS)
 
 
 @app.delete("/api/browsing")
-def browsing_clear():
-    browsing.clear()
+def browsing_clear(request: Request):
+    session(request).browsing.clear()
     return {"cleared": True}
 
 
 @app.get("/api/history")
-def list_history():
+def list_history(request: Request):
     out = []
-    for a in reversed(history.values()):
+    for a in reversed(session(request).history.values()):
         out.append({
             "id": a["id"], "type": a["type"], "analyzed_at": a["analyzed_at"],
             "name": a.get("filename") or a.get("url"), "status": a["status"],
@@ -151,17 +200,13 @@ def list_history():
 
 
 @app.get("/api/analysis/{analysis_id}")
-def get_analysis(analysis_id: str):
-    if analysis_id not in history:
-        raise HTTPException(404, "Analysis not found")
-    return history[analysis_id]
+def get_analysis(request: Request, analysis_id: str):
+    return find_analysis(request, analysis_id)
 
 
 @app.get("/api/analysis/{analysis_id}/report.pdf")
-def analysis_pdf(analysis_id: str):
-    if analysis_id not in history:
-        raise HTTPException(404, "Analysis not found")
-    pdf = build_pdf(history[analysis_id], kb.mitre_names())
+def analysis_pdf(request: Request, analysis_id: str):
+    pdf = build_pdf(find_analysis(request, analysis_id), kb.mitre_names())
     return Response(pdf, media_type="application/pdf",
                     headers={"Content-Disposition": f'attachment; filename="threatlens-report-{analysis_id}.pdf"'})
 
@@ -183,7 +228,7 @@ Rules:
 
 class ChatTurn(BaseModel):
     role: str
-    content: str
+    content: str = Field(max_length=4000)
 
 
 class ChatRequest(BaseModel):
@@ -232,8 +277,9 @@ def _offline_answer(message: str, analysis: dict | None, chunks: list[dict]) -> 
 
 
 @app.post("/api/chat")
-def chat(req: ChatRequest):
-    analysis = history.get(req.analysis_id) if req.analysis_id else None
+def chat(request: Request, req: ChatRequest):
+    rate_limit(request, "chat", "chat_global")
+    analysis = session(request).history.get(req.analysis_id) if req.analysis_id else None
     context, threats = _analysis_context(analysis)
     chunks = kb.search(f"{req.message} {' '.join(threats)}", threats=threats, k=5)
     knowledge = "\n\n".join(f"[{c['source']}] {c['title']}: {c['text']}" for c in chunks)

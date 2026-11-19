@@ -45,6 +45,23 @@ Trained models and demo samples are included in the repo, so the datasets are on
 Automatic checks use the URL model and reputation layer only (fast, not saved to history); the popup runs
 the full check, including live HTTPS and header checks.
 
+## Deploy (Hugging Face Spaces)
+
+The Space only contains two files from [`deploy/huggingface/`](deploy/huggingface/); its Dockerfile clones
+this GitHub repo at build time.
+
+1. Create a Space at https://huggingface.co/new-space: SDK **Docker**, template **Blank**, hardware **CPU basic (free)**.
+2. In the Space's **Files** tab, add `Dockerfile` and `README.md` with the contents of `deploy/huggingface/`.
+3. **Settings → Variables and secrets → New secret**: `GEMINI_API_KEY` or `GROQ_API_KEY`.
+4. Wait for the build, then open `https://<username>-<space>.hf.space`.
+
+To deploy a new version: push to GitHub, then **Settings → Factory rebuild** on the Space.
+
+Deployed mode (`THREATLENS_MULTI_USER=1`, set in the Dockerfile) gives every visitor a private session
+(history and browsing feed), rate-limits chat, uploads and website checks, and caps uploads at 25 MB.
+To use the extension with the deployed site, set its **Backend URL** to the Space URL and paste the
+**pairing code** shown on the Browsing Activity page.
+
 ## Datasets (only for retraining)
 
 | Dataset | Put it in | Source |
@@ -56,6 +73,7 @@ the full check, including live HTTPS and header checks.
 ## Rebuild from scratch (only if data or models change)
 
 ```bash
+pip install -r requirements-train.txt
 python -m src.prepare_flows       # clean CIC-IDS2017 -> data/processed/flows.parquet
 python -m src.train_flows         # RF vs XGBoost + Isolation Forest -> models/, reports/
 python -m src.train_urls          # URL model comparison -> models/url_classifier.joblib
