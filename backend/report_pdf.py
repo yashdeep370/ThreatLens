@@ -315,7 +315,7 @@ def _url_report(a):
         r.lines(fig, 0.53, 0.25, [f"-{d['points']}  {d['reason']}" for d in a["score"]["deductions"]] or ["No deductions"],
                 width=62, gap=0.027)
     r.close(fig)
-    _methodology(r, extra=["URLs are classified by a character n-gram + lexical-feature model (macro F1 0.919), "
+    _methodology(r, extra=["URLs are classified by a character n-gram + lexical-feature model (macro F1 0.920), "
                            "after a reputation check against a curated list of well-known domains. Live checks make "
                            "one normal request to assess HTTPS, certificate and security headers."])
     return r.bytes()

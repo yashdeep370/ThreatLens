@@ -45,20 +45,20 @@ Trained models and demo samples are included in the repo, so the datasets are on
 Automatic checks use the URL model and reputation layer only (fast, not saved to history); the popup runs
 the full check, including live HTTPS and header checks.
 
-## Deploy (Hugging Face Spaces)
+## Deploy (Render, free plan)
 
-The Space only contains two files from [`deploy/huggingface/`](deploy/huggingface/); its Dockerfile clones
-this GitHub repo at build time.
+[`render.yaml`](render.yaml) describes the whole service.
 
-1. Create a Space at https://huggingface.co/new-space: SDK **Docker**, template **Blank**, hardware **CPU basic (free)**.
-2. In the Space's **Files** tab, add `Dockerfile` and `README.md` with the contents of `deploy/huggingface/`.
-3. **Settings → Variables and secrets → New secret**: `GEMINI_API_KEY` or `GROQ_API_KEY`.
-4. Wait for the build, then open `https://<username>-<space>.hf.space`.
+1. Sign in at https://dashboard.render.com with GitHub.
+2. **New → Blueprint**, select this repository, then **Apply**.
+3. When asked, paste `GEMINI_API_KEY` or `GROQ_API_KEY` (leave the other empty).
+4. Wait for the first build (~5 min), then open `https://threatlens-xxxx.onrender.com`.
 
-To deploy a new version: push to GitHub, then **Settings → Factory rebuild** on the Space.
+Every push to `main` redeploys automatically. Free services sleep after 15 minutes without traffic and take
+about a minute to wake up, so open the site a minute before a demo.
 
-Deployed mode (`THREATLENS_MULTI_USER=1`, set in the Dockerfile) gives every visitor a private session
-(history and browsing feed), rate-limits chat, uploads and website checks, and caps uploads at 25 MB.
+Deployed mode (`THREATLENS_MULTI_USER=1`) gives every visitor a private session (history and browsing feed),
+rate-limits chat, uploads and website checks, and caps uploads at 10 MB (`THREATLENS_MAX_UPLOAD_MB`).
 To use the extension with the deployed site, set its **Backend URL** to the Space URL and paste the
 **pairing code** shown on the Browsing Activity page.
 
@@ -117,7 +117,10 @@ otherwise learn. The training split is augmented with 74,328 benign bare domains
 | Model | Accuracy | Macro F1 | Phishing F1 |
 |---|---|---|---|
 | Lexical features + XGBoost | 85.7% | 0.801 | 0.490 |
-| **Char n-grams + lexical + SGD (selected)** | **93.2%** | **0.919** | **0.777** |
+| **Char n-grams (hashed) + lexical + SGD (selected)** | **93.2%** | **0.920** | **0.778** |
+
+Character n-grams use feature hashing (2^19 buckets) instead of a stored vocabulary, which cut the URL
+model's memory from ~106 MB to ~10 MB with no loss of accuracy, so the app fits free hosting tiers.
 
 ## Limitations (say these in the viva)
 

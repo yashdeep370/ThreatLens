@@ -6,6 +6,7 @@ Open: http://127.0.0.1:8000
 Set THREATLENS_MULTI_USER=1 when deployed publicly (per-visitor sessions + rate limits).
 """
 import json
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -22,7 +23,6 @@ from backend import llm  # noqa: E402  (needs env loaded first)
 from backend.detector import FlowDetector  # noqa: E402
 from backend.knowledge import KnowledgeBase  # noqa: E402
 from backend.live import SCENARIOS, LiveMonitor  # noqa: E402
-from backend.report_pdf import build_pdf  # noqa: E402
 from backend.sessions import (  # noqa: E402
     COOKIE, HEADER, LOCAL_SID, MULTI_USER, RateLimiter, SessionStore, new_sid, valid_sid,
 )
@@ -30,7 +30,7 @@ from backend.url_checker import UrlChecker  # noqa: E402
 
 FRONTEND_DIR = ROOT / "frontend"
 SAMPLES_DIR = ROOT / "data" / "samples"
-MAX_UPLOAD_MB = 25
+MAX_UPLOAD_MB = int(os.getenv("THREATLENS_MAX_UPLOAD_MB", "25"))
 SSE_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
 
 kb = KnowledgeBase()
@@ -206,6 +206,7 @@ def get_analysis(request: Request, analysis_id: str):
 
 @app.get("/api/analysis/{analysis_id}/report.pdf")
 def analysis_pdf(request: Request, analysis_id: str):
+    from backend.report_pdf import build_pdf  # lazy: matplotlib costs ~25 MB RAM, load it only when needed
     pdf = build_pdf(find_analysis(request, analysis_id), kb.mitre_names())
     return Response(pdf, media_type="application/pdf",
                     headers={"Content-Disposition": f'attachment; filename="threatlens-report-{analysis_id}.pdf"'})

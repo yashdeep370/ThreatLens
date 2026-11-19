@@ -1,0 +1,22 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# Dashboard -> New -> Blueprint -> pick this repo. Render asks for the API key values.
+services:
+  - type: web
+    name: threatlens
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m uvicorn backend.app:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips "*"
+    healthCheckPath: /api/status
+    autoDeploy: true            # every push to GitHub redeploys
+    envVars:
+      - key: PYTHON_VERSION     # same Python the models were trained with
+        value: 3.12.4
+      - key: THREATLENS_MULTI_USER
+        value: "1"
+      - key: THREATLENS_MAX_UPLOAD_MB   # keeps peak memory well inside the free instance
+        value: "10"
+      - key: GEMINI_API_KEY
+        sync: false             # entered privately in the dashboard, never stored in the repo
+      - key: GROQ_API_KEY
+        sync: false

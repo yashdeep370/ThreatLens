@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 import numpy as np
 from scipy.sparse import csr_matrix, hstack
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import HashingVectorizer, TfidfTransformer
 from sklearn.preprocessing import MaxAbsScaler
 
 SUSPICIOUS_WORDS = (
@@ -96,20 +96,25 @@ def extract_many(urls) -> np.ndarray:
 
 class HybridUrlVectorizer(BaseEstimator, TransformerMixin):
     """Character n-grams of the normalized URL + scaled lexical features.
-    Takes raw URL strings, so the saved pipeline can be called on user input directly."""
+    Takes raw URL strings, so the saved pipeline can be called on user input directly.
 
-    def __init__(self, max_features=300_000):
-        self.max_features = max_features
+    N-grams are mapped to columns by feature hashing instead of a stored vocabulary:
+    a 300k-entry vocabulary took ~100 MB of RAM, too much for free hosting tiers."""
+
+    def __init__(self, n_features=2**19):
+        self.n_features = n_features
+
+    def _hasher(self):
+        return HashingVectorizer(analyzer="char_wb", ngram_range=(3, 5), n_features=self.n_features,
+                                 alternate_sign=False, norm=None, dtype=np.float32)
 
     def fit(self, urls, y=None):
-        self.tfidf_ = TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5), max_features=self.max_features,
-                                      sublinear_tf=True, dtype=np.float32)
-        self.tfidf_.fit([normalize(u) for u in urls])
+        self.idf_ = TfidfTransformer(sublinear_tf=True).fit(self._hasher().transform([normalize(u) for u in urls]))
         self.scaler_ = MaxAbsScaler().fit(extract_many(urls))
         return self
 
     def transform(self, urls):
-        chars = self.tfidf_.transform([normalize(u) for u in urls])
+        chars = self.idf_.transform(self._hasher().transform([normalize(u) for u in urls]))
         lexical = csr_matrix(self.scaler_.transform(extract_many(urls)))
         return hstack([chars, lexical]).tocsr()
 
