@@ -30,6 +30,14 @@ from backend.url_checker import UrlChecker  # noqa: E402
 
 FRONTEND_DIR = ROOT / "frontend"
 SAMPLES_DIR = ROOT / "data" / "samples"
+TEST_UPLOADS_DIR = ROOT / "data" / "test_uploads"
+TEST_UPLOAD_NOTES = {
+    "01": "Normal office day · no labels",
+    "02": "Hidden attacks · no labels",
+    "03": "Full day, 15k flows · labelled (shows accuracy)",
+    "04": "Attack types never seen in training",
+    "05": "Wrong format · shows validation error",
+}
 MAX_UPLOAD_MB = int(os.getenv("THREATLENS_MAX_UPLOAD_MB", "25"))
 SSE_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
 
@@ -128,6 +136,15 @@ def analyze_flows(request: Request, file: UploadFile = File(...)):
 @app.get("/api/samples")
 def list_samples():
     return sorted(p.name for p in SAMPLES_DIR.glob("*.csv")) if SAMPLES_DIR.exists() else []
+
+
+@app.get("/api/test-uploads")
+def list_test_uploads():
+    if not TEST_UPLOADS_DIR.exists():
+        return []
+    return [{"name": p.name, "note": TEST_UPLOAD_NOTES.get(p.name[:2], ""),
+             "size_mb": round(p.stat().st_size / 2**20, 1), "url": f"/downloads/{p.name}"}
+            for p in sorted(TEST_UPLOADS_DIR.glob("*.csv"))]
 
 
 @app.post("/api/analyze/sample/{name}")
@@ -302,6 +319,8 @@ def chat(request: Request, req: ChatRequest):
 
 # ---------- website ----------
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+if TEST_UPLOADS_DIR.exists():
+    app.mount("/downloads", StaticFiles(directory=TEST_UPLOADS_DIR), name="downloads")
 
 
 @app.get("/")

@@ -126,6 +126,15 @@ async function loadSamples() {
     api(`/api/analyze/sample/${encodeURIComponent(b.dataset.sample)}`, { method: "POST" }))));
 }
 
+async function loadTestUploads() {
+  const files = await api("/api/test-uploads").catch(() => []);
+  $("#test-uploads").innerHTML = files.length
+    ? files.map(f => `<a class="test-file" href="${esc(f.url)}" download>
+        <div><div class="small"><b>${esc(f.note || f.name)}</b></div><div class="small muted mono">${esc(f.name)} · ${f.size_mb} MB</div></div>
+        <span class="dl">⬇</span></a>`).join("")
+    : '<span class="muted small">No test files found. Run <code>python -m src.make_upload_tests</code></span>';
+}
+
 async function runTraffic(request) {
   $("#traffic-result").innerHTML = "";
   $("#traffic-loading").hidden = false;
@@ -622,6 +631,7 @@ setInterval(() => { if (br.timeline) renderBrowsingCharts(l => br.events.filter(
 connectBrowsing();
 loadStatus();
 loadSamples();
+loadTestUploads();
 loadScenarios();
 loadDashboard();
 

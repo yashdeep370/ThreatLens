@@ -151,6 +151,17 @@ computed or curated, not generated, so the LLM only explains them.
 No, it's a standard layer (browsers use Safe Browsing and allowlists). It's transparent: the report shows
 when it overrides the model, and a very confident malicious verdict (≥90%) is still flagged on a trusted domain.
 
+**Q: What happens with attack types the model was never trained on?**
+We tested it (`data/test_uploads/04_unseen_attack_types.csv`; Bot, Web Attack and Infiltration were
+excluded from training). Web attacks: 87–95% flagged as malicious, but labelled as port scan or DoS, so it
+knows something is wrong without having a name for it. Infiltration: 33% caught, all by the anomaly detector.
+Bot traffic: 0%; botnet command-and-control looks normal flow by flow and needs behaviour over time to detect.
+That's the honest limit of supervised learning and why the anomaly layer exists.
+
+**Q: Can I test the upload myself?**
+Yes. The Traffic Analysis page has downloadable test files: unlabelled normal traffic, hidden attacks, a
+15,000-flow labelled day (99.94% accuracy), unseen attack types, and a wrong-format file that shows validation.
+
 **Q: Can it detect attacks on any website?**
 No, and that's by design. Detecting a DoS on a server needs that server's traffic. The Website Check makes
 one normal request (like a browser) to assess HTTPS and headers; it never scans. It also blocks requests to

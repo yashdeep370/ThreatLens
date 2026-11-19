@@ -130,6 +130,10 @@ a.btn { text-decoration: none; display: inline-block; }
 .drop-icon { font-size: 28px; color: var(--accent); }
 .samples { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .samples .btn { text-align: left; font-size: 13px; }
+.test-uploads { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+.test-file { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; color: var(--text); text-decoration: none; }
+.test-file:hover { border-color: var(--accent); }
+.test-file .dl { color: var(--accent); font-weight: 600; white-space: nowrap; }
 .loading { display: flex; align-items: center; gap: 12px; padding: 20px; color: var(--muted); }
 .spinner { width: 20px; height: 20px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
