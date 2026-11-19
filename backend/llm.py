@@ -12,6 +12,7 @@ the other provider if both keys are set. If everything fails, LLMUnavailable is
 raised and the caller answers from the knowledge base instead.
 """
 import os
+import re
 import time
 
 import requests
@@ -25,6 +26,16 @@ GROQ_MODELS = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
 
 class LLMUnavailable(Exception):
     pass
+
+
+# Last failure, shown in /api/status so deployment problems can be diagnosed
+# without server log access. Anything that looks like an API key is removed.
+_last_error: str | None = None
+_KEY_RE = re.compile(r"(AIza[0-9A-Za-z_\-]{10,}|gsk_[0-9A-Za-z]{10,})")
+
+
+def _redact(text: str) -> str:
+    return _KEY_RE.sub("[redacted]", text)[:500]
 
 
 class _ModelNotFound(Exception):
@@ -57,7 +68,7 @@ def providers() -> list[str]:
 
 def status() -> dict:
     p = providers()
-    return {"available": bool(p), "providers": p}
+    return {"available": bool(p), "providers": p, "last_error": _last_error}
 
 
 def _post(url, headers, body):
@@ -104,6 +115,7 @@ def _groq(key, system, messages, model):
 def chat(system: str, messages: list[dict]) -> tuple[str, str]:
     """messages: [{"role": "user"|"assistant", "content": str}, ...].
     Returns (answer, "provider/model")."""
+    global _last_error
     keys = _keys()
     errors = []
     for provider in providers():
@@ -114,11 +126,14 @@ def chat(system: str, messages: list[dict]) -> tuple[str, str]:
         override = os.getenv(env_model)
         for model in ([override] if override else []) + models:
             try:
-                return call(keys[provider], system, messages, model), f"{provider}/{model}"
+                answer = call(keys[provider], system, messages, model)
+                _last_error = None
+                return answer, f"{provider}/{model}"
             except _ModelNotFound as e:
                 errors.append(f"{provider}/{model}: model unavailable ({e})")
                 continue
             except Exception as e:  # network, auth, quota: try the next provider
                 errors.append(f"{provider}/{model}: {e}")
                 break
-    raise LLMUnavailable("; ".join(errors) or "No LLM API key configured")
+    _last_error = _redact("; ".join(errors) or "No LLM API key configured")
+    raise LLMUnavailable(_last_error)
