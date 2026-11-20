@@ -48,16 +48,92 @@ async function api(path, opts = {}) {
   return data;
 }
 
-function gauge(score, size = 220) {
+// ---------- animated visuals (gauge, count-up numbers, icon tiles, chart defaults) ----------
+const GAUGE_GRADIENTS = {
+  low: ["#2dd4bf", "#22c55e"], moderate: ["#fde047", "#f59e0b"],
+  high: ["#fb923c", "#ef4444"], critical: ["#f87171", "#b91c1c"],
+};
+let gaugeSeq = 0;
+
+// Semicircle score gauge: gradient arc that sweeps in while the number counts up.
+// animate=false for gauges that refresh every second (Live Monitor).
+function gauge(score, size = 220, { animate = true } = {}) {
   const [band, label] = bandOf(score);
-  const r = 80, c = Math.PI * r, filled = c * score / 100;
-  return `<svg viewBox="0 0 200 120" width="${size}" style="max-width:100%">
-      <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="var(--panel-2)" stroke-width="16" stroke-linecap="round"/>
-      <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="${BAND_COLORS[band]}" stroke-width="16" stroke-linecap="round"
-            stroke-dasharray="${filled} ${c}"/>
+  const [c1, c2] = GAUGE_GRADIENTS[band];
+  const id = `g${++gaugeSeq}`;
+  return `<div class="gauge ${animate ? "gauge-anim" : ""}">
+    <svg viewBox="0 0 200 120" width="${size}" style="max-width:100%">
+      <defs><linearGradient id="${id}" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>
+      <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="15" stroke-linecap="round"/>
+      <path class="gauge-arc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="url(#${id})" stroke-width="15" stroke-linecap="round"
+            pathLength="100" stroke-dasharray="${score} 100" style="--score:${score};filter:drop-shadow(0 0 8px ${c2}88)"/>
     </svg>
-    <div class="gauge-num" style="margin-top:-62px">${score}<span class="muted" style="font-size:16px">/100</span></div>
-    <div class="gauge-band" style="color:${BAND_COLORS[band]}">${label}</div>`;
+    <div class="gauge-num" style="margin-top:-62px">${animate ? cnt(score) : score}<span class="muted" style="font-size:16px">/100</span></div>
+    <div class="gauge-band" style="color:${BAND_COLORS[band]}">${label}</div></div>`;
+}
+
+// <span> that animateIn() counts up from 0 to `value` (final value shown if JS animation is skipped).
+function cnt(value, dec = 0, suf = "") {
+  const shown = dec ? Number(value).toFixed(dec) : Math.round(value).toLocaleString();
+  return `<span data-count="${value}" data-dec="${dec}" data-suf="${suf}">${shown}${suf}</span>`;
+}
+function animateIn(root) {
+  if (!root || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  root.querySelectorAll("[data-count]").forEach(el => {
+    const target = parseFloat(el.dataset.count), dec = +el.dataset.dec, suf = el.dataset.suf || "";
+    const fmt = v => (dec ? v.toFixed(dec) : Math.round(v).toLocaleString()) + suf;
+    const start = performance.now(), dur = 1100;
+    const tick = t => {
+      const p = Math.min(1, (t - start) / dur), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(target * e);
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    el.textContent = fmt(0);
+    requestAnimationFrame(tick);
+  });
+}
+
+const ICONS = {
+  activity: '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  alert: '<path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/>',
+  shield: '<path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Z"/>',
+  layers: '<path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/>',
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  check: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+  gauge: '<path d="M4 18a8 8 0 1 1 16 0"/><path d="m12 14 4-5"/>',
+};
+// KPI tile with a coloured glass icon square (like the reference designs).
+function tile(label, valueHtml, icon, tone = "violet") {
+  return `<div class="tile"><div class="t-icon t-${tone}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[icon]}</svg></div>
+    <div class="l">${label}</div><div class="v">${valueHtml}</div></div>`;
+}
+
+// Chart.js look: theme font and colours, smooth easing, rounded spaced donut segments.
+if (window.Chart) {
+  Chart.defaults.font.family = '"Plus Jakarta Sans", system-ui, sans-serif';
+  Chart.defaults.color = "#aab3c9";
+  Chart.defaults.animation.duration = 1200;
+  Chart.defaults.animation.easing = "easeOutQuart";
+  Chart.defaults.elements.arc.borderRadius = 8;
+  Chart.defaults.elements.arc.borderWidth = 0;
+  Chart.defaults.plugins.tooltip.backgroundColor = "rgba(12, 15, 28, .92)";
+  Chart.defaults.plugins.tooltip.borderColor = "rgba(255, 255, 255, .12)";
+  Chart.defaults.plugins.tooltip.borderWidth = 1;
+  Chart.defaults.plugins.tooltip.padding = 10;
+  Chart.defaults.plugins.tooltip.cornerRadius = 10;
+}
+const DONUT_OPTIONS = { cutout: "74%", spacing: 3, maintainAspectRatio: false, animation: { animateRotate: true, animateScale: true, duration: 1400 } };
+// Vertical gradient fill for line/area charts.
+function areaFill(color) {
+  return ctx => {
+    const { chart } = ctx, area = chart.chartArea;
+    if (!area) return color + "44";
+    const g = chart.ctx.createLinearGradient(0, area.top, 0, area.bottom);
+    g.addColorStop(0, color + "99");
+    g.addColorStop(1, color + "08");
+    return g;
+  };
 }
 
 function banner(status, sub = "", analysisId = null) {
@@ -125,7 +201,43 @@ function show(view, { push = true, animate = true } = {}) {
   }
 }
 
+// Page titles type themselves in italic serif each time a page opens (like the landing tagline).
+// Only the title's text is typed; badges inside it (e.g. the LIVE pill) stay in place.
+function prepareTitles() {
+  $$(".view .page-head h1").forEach(h1 => {
+    const node = [...h1.childNodes].find(n => n.nodeType === Node.TEXT_NODE && n.textContent.trim());
+    if (!node) return;
+    const text = node.textContent.trim();
+    const wrap = document.createElement("span");
+    wrap.className = "tt";
+    wrap.setAttribute("aria-label", text);
+    wrap.innerHTML = `<span class="tt-ghost" aria-hidden="true">${esc(text)}</span><span class="tt-live" aria-hidden="true"><span class="tt-out">${esc(text)}</span><span class="tt-caret"></span></span>`;
+    wrap.dataset.text = text;
+    h1.replaceChild(wrap, node);
+    h1.insertBefore(document.createTextNode(""), wrap.nextSibling);
+  });
+}
+let titleTimer = null;
+function typeTitle(view) {
+  const wrap = $(`#view-${view} .page-head h1 .tt`);
+  clearTimeout(titleTimer);
+  $$(".tt-caret.on").forEach(c => c.classList.remove("on", "done"));
+  if (!wrap || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const text = wrap.dataset.text, out = wrap.querySelector(".tt-out"), caret = wrap.querySelector(".tt-caret");
+  let i = 0;
+  out.textContent = "";
+  caret.classList.remove("done");
+  caret.classList.add("on");
+  const step = () => {
+    out.textContent = text.slice(0, ++i);
+    if (i >= text.length) { caret.classList.add("done"); return; }
+    titleTimer = setTimeout(step, text[i - 1] === " " ? 55 : 32 + Math.random() * 28);
+  };
+  titleTimer = setTimeout(step, 260);
+}
+
 function afterShow(view) {
+  typeTitle(view);
   if (view === "dashboard") loadDashboard();
   if (view === "history") loadHistory();
   homeVisibility(view === "home");
@@ -283,10 +395,10 @@ function renderTraffic(a) {
         </div></div>
     </div>
     <div class="tiles">
-      <div class="tile"><div class="l">Flows analyzed</div><div class="v">${num(a.total_flows)}</div></div>
-      <div class="tile"><div class="l">Threats detected</div><div class="v">${a.threats_detected}</div></div>
-      <div class="tile"><div class="l">Malicious / unusual flows</div><div class="v">${num(a.malicious_flows)}</div></div>
-      <div class="tile"><div class="l">Mean model confidence</div><div class="v">${pct(a.mean_confidence)}</div></div>
+      ${tile("Flows analyzed", cnt(a.total_flows), "activity", "violet")}
+      ${tile("Threats detected", cnt(a.threats_detected), "alert", a.threats_detected ? "red" : "green")}
+      ${tile("Malicious / unusual flows", cnt(a.malicious_flows), "target", "orange")}
+      ${tile("Mean model confidence", cnt(a.mean_confidence * 100, 1, "%"), "gauge", "cyan")}
     </div>
     <div class="card"><div class="card-label">Security incidents</div>
       ${a.incidents.length ? a.incidents.map((i, n) => incidentCard(i, n === 0)).join("")
@@ -308,19 +420,20 @@ function renderTraffic(a) {
     </div>
     ${ev ? `<div class="card"><div class="card-label">Validation against ground-truth labels in this file</div>
       <div class="tiles" style="margin:0">
-        <div class="tile"><div class="l">Accuracy</div><div class="v">${pct(ev.accuracy, 2)}</div></div>
-        <div class="tile"><div class="l">Attack detection rate</div><div class="v">${ev.attack_detection_rate == null ? "-" : pct(ev.attack_detection_rate, 2)}</div></div>
-        <div class="tile"><div class="l">False alarm rate</div><div class="v">${ev.false_alarm_rate == null ? "-" : pct(ev.false_alarm_rate, 2)}</div></div>
-        <div class="tile"><div class="l">Labelled flows</div><div class="v">${num(ev.labelled_flows)}</div></div>
+        ${tile("Accuracy", cnt(ev.accuracy * 100, 2, "%"), "check", "green")}
+        ${tile("Attack detection rate", ev.attack_detection_rate == null ? "-" : cnt(ev.attack_detection_rate * 100, 2, "%"), "target", "cyan")}
+        ${tile("False alarm rate", ev.false_alarm_rate == null ? "-" : cnt(ev.false_alarm_rate * 100, 2, "%"), "alert", "orange")}
+        ${tile("Labelled flows", cnt(ev.labelled_flows), "layers", "violet")}
       </div></div>` : ""}`;
 
   if (state.chart) state.chart.destroy();
   state.chart = new Chart($("#dist-chart"), {
     type: "doughnut",
     data: { labels: dist.map(([c]) => LABELS[c] || c),
-            datasets: [{ data: dist.map(([, n]) => n), backgroundColor: dist.map(([c]) => CLASS_COLORS[c] || "#4f8cff"), borderWidth: 0 }] },
-    options: { cutout: "68%", plugins: { legend: { display: false } }, maintainAspectRatio: false },
+            datasets: [{ data: dist.map(([, n]) => n), backgroundColor: dist.map(([c]) => CLASS_COLORS[c] || "#4f8cff") }] },
+    options: { ...DONUT_OPTIONS, plugins: { legend: { display: false } } },
   });
+  animateIn($("#traffic-result"));
 }
 
 // ---------- website check ----------
@@ -393,6 +506,7 @@ function renderUrl(a) {
       <div class="report-section"><h4>Threat intelligence (MITRE ATT&amp;CK)</h4>${mitreTags(a.playbook.mitre)}</div>
       <div class="report-section"><h4>Recommended actions</h4>${recList(a.playbook.recommendations)}</div></div>` : ""}
     <div class="no-print"><button class="btn" data-ask="Explain this website check result and what I should do.">💬 Ask AI about this result</button></div>`;
+  animateIn($("#url-result"));
 }
 
 // ---------- dashboard ----------
@@ -422,25 +536,46 @@ async function loadDashboard() {
   const totalThreats = hist.reduce((s, h) => s + h.threats, 0);
   const risky = urls.filter(u => u.status.level !== "safe").length;
   $("#dash-tiles").innerHTML = `
-    <div class="tile"><div class="l">Traffic analyses</div><div class="v">${flows.length}</div></div>
-    <div class="tile"><div class="l">Websites checked</div><div class="v">${urls.length}</div></div>
-    <div class="tile"><div class="l">Threats found (all analyses)</div><div class="v">${totalThreats}</div></div>
-    <div class="tile"><div class="l">Risky websites</div><div class="v">${risky}</div></div>`;
+    ${tile("Traffic analyses", cnt(flows.length), "activity", "violet")}
+    ${tile("Websites checked", cnt(urls.length), "globe", "cyan")}
+    ${tile("Threats found (all analyses)", cnt(totalThreats), "alert", "red")}
+    ${tile("Risky websites", cnt(risky), "shield", "orange")}`;
+
+  // Traffic-mix donut from the latest traffic analysis.
+  if (dash.donut) { dash.donut.destroy(); dash.donut = null; }
+  if (latest) {
+    const dist = Object.entries(latest.class_distribution).sort((x, y) => y[1] - x[1]);
+    const total = dist.reduce((s, [, n]) => s + n, 0);
+    const benign = latest.class_distribution.Benign || 0;
+    $("#dash-mix-center").innerHTML = `<div class="mix-big">${cnt(benign / total * 100, 1, "%")}</div><div class="small muted">benign</div>`;
+    $("#dash-mix-legend").innerHTML = dist.map(([c, n]) => `<div class="legend-row"><span class="legend-dot" style="background:${CLASS_COLORS[c] || "#4f8cff"}"></span>
+      <span>${LABELS[c] || esc(c)}</span><span class="mono small muted">${pct(n / total)}</span></div>`).join("");
+    dash.donut = new Chart($("#dash-donut"), {
+      type: "doughnut",
+      data: { labels: dist.map(([c]) => LABELS[c] || c), datasets: [{ data: dist.map(([, n]) => n), backgroundColor: dist.map(([c]) => CLASS_COLORS[c] || "#4f8cff") }] },
+      options: { ...DONUT_OPTIONS, plugins: { legend: { display: false } } },
+    });
+  } else {
+    $("#dash-mix-center").innerHTML = "";
+    $("#dash-mix-legend").innerHTML = '<p class="muted small" style="margin:0">Run a traffic analysis to see its traffic mix.</p>';
+  }
 
   $("#dash-incidents").innerHTML = latest && latest.incidents.length
     ? latest.incidents.map(i => `<div class="mini-incident"><div><b>${esc(i.title)}</b>
         <div class="small muted">${num(i.flows)} flows · confidence ${pct(i.confidence)}</div></div><span class="sev ${i.severity}">${i.severity}</span></div>`).join("")
     : '<p class="muted" style="margin:0">No active incidents.</p>';
   $("#dash-recent").innerHTML = historyTable(hist.slice(0, 6), true);
+  animateIn($("#dash-content"));
 }
+const dash = { donut: null };
 
 // ---------- history ----------
 function historyTable(rows, compact = false) {
   if (!rows.length) return '<p class="muted" style="margin:0">Nothing yet.</p>';
   return `<div class="table-wrap"><table class="table"><tr><th>Type</th><th>Target</th><th>Status</th><th>Score</th>${compact ? "" : "<th>When</th>"}</tr>
     ${rows.map(h => `<tr class="click" data-open="${h.id}"><td>${h.type === "flows" ? "Traffic" : "Website"}</td>
-      <td class="mono small" style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(h.name)}</td>
-      <td>${STATUS_ICON[h.status.level]} <span class="small">${esc(h.status.headline)}</span></td>
+      <td class="mono small" style="max-width:${compact ? 150 : 260}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(h.name)}</td>
+      <td title="${esc(h.status.headline)}">${STATUS_ICON[h.status.level]}${compact ? "" : ` <span class="small">${esc(h.status.headline)}</span>`}</td>
       <td class="mono" style="color:${BAND_COLORS[bandOf(h.score)[0]]}">${h.score}</td>
       ${compact ? "" : `<td class="small muted">${fmtTime(h.analyzed_at)}</td>`}</tr>`).join("")}</table></div>`;
 }
@@ -520,13 +655,14 @@ function initLiveChart() {
   live.chart = new Chart($("#live-chart"), {
     type: "line",
     data: { labels: [], datasets: LIVE_SERIES.map(c => ({
-      label: LABELS[c], data: [], borderColor: CLASS_COLORS[c], backgroundColor: CLASS_COLORS[c] + "55",
-      fill: true, tension: .35, pointRadius: 0, borderWidth: 1.5 })) },
+      label: LABELS[c], data: [], borderColor: CLASS_COLORS[c], backgroundColor: areaFill(CLASS_COLORS[c]),
+      fill: true, tension: .4, pointRadius: 0, borderWidth: 2 })) },
     options: {
-      maintainAspectRatio: false, animation: { duration: 250 },
-      scales: { x: { ticks: { color: "#8b97b0", maxTicksLimit: 8 }, grid: { color: "#22304d" } },
-                y: { stacked: true, beginAtZero: true, ticks: { color: "#8b97b0" }, grid: { color: "#22304d" } } },
-      plugins: { legend: { labels: { color: "#c6cfe0", boxWidth: 12 } } },
+      maintainAspectRatio: false, animation: { duration: 400, easing: "easeOutCubic" },
+      interaction: { mode: "index", intersect: false },
+      scales: { x: { ticks: { color: "#8b97b0", maxTicksLimit: 8 }, grid: { color: "rgba(255,255,255,.05)" }, border: { display: false } },
+                y: { stacked: true, beginAtZero: true, ticks: { color: "#8b97b0" }, grid: { color: "rgba(255,255,255,.05)" }, border: { display: false } } },
+      plugins: { legend: { labels: { color: "#c6cfe0", boxWidth: 10, usePointStyle: true, pointStyle: "circle" } } },
     },
   });
 }
@@ -561,7 +697,7 @@ function startLive() {
 
     $("#live-bar").style.width = `${(d.tick / d.of * 100).toFixed(1)}%`;
     $("#live-progress-text").textContent = `${d.tick} / ${d.of} seconds · mean model confidence ${pct(d.mean_confidence)}`;
-    $("#live-gauge").innerHTML = gauge(d.score);
+    $("#live-gauge").innerHTML = gauge(d.score, 220, { animate: false });
     $("#live-total").textContent = num(live.total);
     $("#live-rate").textContent = `${d.flows} /s`;
     $("#live-active").textContent = d.active.length;
@@ -667,8 +803,8 @@ function renderBrowsingCharts(count) {
   if (!br.donut) {
     br.donut = new Chart($("#br-donut"), {
       type: "doughnut",
-      data: { labels: levels.map(l => LEVEL_NAMES[l]), datasets: [{ data: donutData, backgroundColor: levels.map(l => LEVEL_COLORS[l]), borderWidth: 0 }] },
-      options: { cutout: "65%", maintainAspectRatio: false, plugins: { legend: { position: "right", labels: { color: "#c6cfe0", boxWidth: 12 } } } },
+      data: { labels: levels.map(l => LEVEL_NAMES[l]), datasets: [{ data: donutData, backgroundColor: levels.map(l => LEVEL_COLORS[l]) }] },
+      options: { ...DONUT_OPTIONS, plugins: { legend: { position: "right", labels: { color: "#c6cfe0", boxWidth: 10, usePointStyle: true, pointStyle: "circle" } } } },
     });
   } else {
     br.donut.data.datasets[0].data = donutData;
@@ -680,14 +816,14 @@ function renderBrowsingCharts(count) {
   const buckets = Object.fromEntries(minutes.map(m => [minuteKey(m), { safe: 0, warning: 0, danger: 0 }]));
   br.events.forEach(e => { const b = buckets[minuteKey(new Date(e.time))]; if (b) b[e.level]++; });
   const labels = Object.keys(buckets);
-  const datasets = levels.map(l => ({ label: LEVEL_NAMES[l], data: labels.map(k => buckets[k][l]), backgroundColor: LEVEL_COLORS[l], borderRadius: 3 }));
+  const datasets = levels.map(l => ({ label: LEVEL_NAMES[l], data: labels.map(k => buckets[k][l]), backgroundColor: LEVEL_COLORS[l], borderRadius: 6, borderSkipped: false, maxBarThickness: 22 }));
   if (!br.timeline) {
     br.timeline = new Chart($("#br-timeline"), {
       type: "bar", data: { labels, datasets },
-      options: { maintainAspectRatio: false, animation: { duration: 200 },
-        scales: { x: { stacked: true, ticks: { color: "#8b97b0", maxTicksLimit: 10 }, grid: { display: false } },
-                  y: { stacked: true, beginAtZero: true, ticks: { color: "#8b97b0", precision: 0 }, grid: { color: "#22304d" } } },
-        plugins: { legend: { labels: { color: "#c6cfe0", boxWidth: 12 } } } },
+      options: { maintainAspectRatio: false, animation: { duration: 700, easing: "easeOutQuart" },
+        scales: { x: { stacked: true, ticks: { color: "#8b97b0", maxTicksLimit: 10 }, grid: { display: false }, border: { display: false } },
+                  y: { stacked: true, beginAtZero: true, ticks: { color: "#8b97b0", precision: 0 }, grid: { color: "rgba(255,255,255,.05)" }, border: { display: false } } },
+        plugins: { legend: { labels: { color: "#c6cfe0", boxWidth: 10, usePointStyle: true, pointStyle: "circle" } } } },
     });
   } else {
     br.timeline.data.labels = labels;
@@ -855,6 +991,7 @@ loadSamples();
 loadTestUploads();
 loadScenarios();
 
+prepareTitles();
 // Open the page named by the URL (/app/live, /app/traffic, ...).
 show(viewFromPath(location.pathname), { push: false, animate: false });
 history.replaceState({ view: viewFromPath(location.pathname) }, "", location.pathname + location.hash);

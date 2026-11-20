@@ -120,18 +120,32 @@
         <button class="btn primary" data-goto="traffic">Start an analysis</button>
       </div>
       <div id="dash-content" hidden>
-        <div class="grid-hero">
-          <div class="card score-card">
+        <div class="card status-card" id="dash-status"></div>
+        <div class="tiles" id="dash-tiles"></div>
+        <div class="bento">
+          <div class="card score-card b-score">
             <div class="card-label">Security posture</div>
             <div id="dash-gauge"></div>
             <div class="score-note">Observed-risk score · not a guarantee of security</div>
           </div>
-          <div class="card status-card" id="dash-status"></div>
-        </div>
-        <div class="tiles" id="dash-tiles"></div>
-        <div class="grid-2">
-          <div class="card"><div class="card-label">Active incidents (latest traffic analysis)</div><div id="dash-incidents"></div></div>
-          <div class="card"><div class="card-label">Recent activity</div><div id="dash-recent"></div></div>
+          <div class="card b-mix">
+            <div class="card-label">Traffic mix · latest analysis</div>
+            <div class="mix-wrap"><canvas id="dash-donut"></canvas><div class="mix-center" id="dash-mix-center"></div></div>
+            <div class="mix-legend" id="dash-mix-legend"></div>
+          </div>
+          <div class="card b-ai ai-card">
+            <div class="ai-head"><span class="ai-chip">✦ ThreatLens AI</span></div>
+            <h3 class="ai-title">Ask me anything</h3>
+            <button class="ai-suggest ai-violet" data-ask="Summarize my latest analysis and the most important risk.">
+              <b>Latest risk</b><span>Summarize my latest analysis and what matters most.</span></button>
+            <button class="ai-suggest ai-cyan" data-ask="What should I do first to improve my security score?">
+              <b>Improve my score</b><span>Which actions raise my security score fastest?</span></button>
+            <button class="ai-suggest ai-pink" data-ask="Explain the MITRE ATT&CK techniques behind my detections.">
+              <b>Threat intelligence</b><span>Explain the MITRE ATT&amp;CK techniques behind my detections.</span></button>
+            <button class="ai-input" data-ask=""><span class="ai-spark">✦</span><span>Just ask me anything…</span></button>
+          </div>
+          <div class="card b-inc"><div class="card-label">Active incidents · latest traffic analysis</div><div id="dash-incidents"></div></div>
+          <div class="card b-recent"><div class="card-label">Recent activity</div><div id="dash-recent"></div></div>
         </div>
       </div>
     </section>
