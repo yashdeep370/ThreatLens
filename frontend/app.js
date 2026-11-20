@@ -95,6 +95,7 @@ function show(view, { push = true } = {}) {
   closeMenu();
   if (view === "dashboard") loadDashboard();
   if (view === "history") loadHistory();
+  homeVisibility(view === "home");
   window.scrollTo(0, 0);
 }
 
@@ -678,6 +679,100 @@ document.addEventListener("click", e => {
   $("#url-form").requestSubmit();
 });
 setInterval(() => { if (br.timeline) renderBrowsingCharts(l => br.events.filter(e => e.level === l).length); }, 30000);
+
+// ---------- home page: typed headline, parallax quote section, video footer ----------
+const REDUCED_MOTION = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let homeTyped = false;
+
+function typeHomeHeadline() {
+  if (homeTyped) return;
+  homeTyped = true;
+  const TEXT = "with Intelligent Security.";
+  const out = $("#home-typed"), caret = $("#home-caret");
+  if (REDUCED_MOTION) { out.textContent = TEXT; return; }
+  let i = 0;
+  const step = () => {
+    out.textContent = TEXT.slice(0, ++i);
+    if (i >= TEXT.length) { caret.classList.add("done"); return; }
+    const ch = TEXT[i - 1];
+    setTimeout(step, ch === "." ? 420 : ch === " " ? 75 : 45 + Math.random() * 40);
+  };
+  const begin = () => {
+    setTimeout(() => caret.classList.add("on"), 700);   // after the first line has risen
+    setTimeout(step, 900);
+  };
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(begin, begin); else begin();
+}
+
+// Pause the home video on other pages (saves CPU and battery); start typing on first view.
+function homeVisibility(onHome) {
+  const v = $("#home-video");
+  if (!v) return;
+  if (onHome && !REDUCED_MOTION) { const p = v.play(); if (p && p.catch) p.catch(() => {}); typeHomeHeadline(); }
+  else if (onHome) { v.pause(); typeHomeHeadline(); }
+  else v.pause();
+}
+
+// Parallax: progress = how far the quote section has travelled through the viewport (0..1).
+// Each layer eases toward its target with linear interpolation (lerp) every frame.
+(function quoteParallax() {
+  const section = $("#quote-section");
+  if (!section || REDUCED_MOTION) {
+    if (section) $$(".q-cloud", section).forEach(c => { c.style.opacity = "1"; c.style.transform = c.classList.contains("q-cloud-right") ? "scaleX(-1)" : "none"; });
+    return;
+  }
+  const rainbow = $("#q-rainbow"), left = $("#q-cloud-left"), right = $("#q-cloud-right");
+  const lerp = (a, b, f) => a + (b - a) * f;
+  const cur = { rainbowY: 120, cloudX: 200, cloudY: 0 };
+  let visible = false, raf = null;
+
+  function frame() {
+    const rect = section.getBoundingClientRect(), vh = innerHeight;
+    const progress = Math.min(1, Math.max(0, (vh - rect.top) / (vh + rect.height)));
+    const inView = progress > 0.12 && progress < 0.92;
+    cur.rainbowY = lerp(cur.rainbowY, 120 - progress * 280, 0.06);   // +120px -> -160px
+    cur.cloudX = lerp(cur.cloudX, inView ? 0 : 200, 0.04);            // slide in / back out
+    cur.cloudY = lerp(cur.cloudY, progress * -50, 0.04);              // gentle upward drift
+    const opacity = Math.max(0, 1 - cur.cloudX / 200);
+    rainbow.style.transform = `translate3d(0, ${cur.rainbowY.toFixed(2)}px, 0)`;
+    left.style.transform = `translate3d(${(-cur.cloudX).toFixed(2)}px, ${cur.cloudY.toFixed(2)}px, 0)`;
+    right.style.transform = `translate3d(${cur.cloudX.toFixed(2)}px, ${cur.cloudY.toFixed(2)}px, 0) scaleX(-1)`;
+    left.style.opacity = right.style.opacity = opacity.toFixed(3);
+    raf = visible ? requestAnimationFrame(frame) : null;
+  }
+  // Only animate while the section is near the screen.
+  new IntersectionObserver(([entry]) => {
+    visible = entry.isIntersecting;
+    if (visible && !raf) raf = requestAnimationFrame(frame);
+  }, { rootMargin: "200px 0px" }).observe(section);
+})();
+
+// Footer video loads only when the footer scrolls into view (it's 14 MB).
+(function footerVideo() {
+  const v = $("#footer-video");
+  if (!v || REDUCED_MOTION) return;
+  new IntersectionObserver(([entry], obs) => {
+    if (!entry.isIntersecting) { if (v.src) v.pause(); return; }
+    if (!v.src) {
+      v.src = v.dataset.src;
+      v.addEventListener("loadeddata", () => v.classList.add("ready"), { once: true });
+    }
+    const p = v.play(); if (p && p.catch) p.catch(() => {});
+  }, { rootMargin: "100px 0px" }).observe($("#site-footer"));
+})();
+
+$("#back-to-top").addEventListener("click", e => { e.preventDefault(); scrollTo({ top: 0, behavior: REDUCED_MOTION ? "auto" : "smooth" }); });
+
+// Footer "Check a website" box runs a real website check.
+$("#footer-check").addEventListener("submit", e => {
+  e.preventDefault();
+  const url = $("#footer-url").value.trim();
+  if (!url) return;
+  show("website");
+  $("#url-input").value = url;
+  $("#footer-url").value = "";
+  $("#url-form").requestSubmit();
+});
 
 // ---------- init ----------
 connectBrowsing();
