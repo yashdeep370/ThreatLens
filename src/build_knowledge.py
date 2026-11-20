@@ -118,9 +118,37 @@ def playbook_entries(playbooks: dict) -> list[dict]:
     return entries
 
 
+def scam_entries(library: dict) -> list[dict]:
+    """Scam Library (knowledge/scams.json): one chunk per scam's warning signs, one for what to do,
+    one per real case, plus cyber-law and reporting chunks."""
+    entries = []
+    for s in library["scams"]:
+        src = "Scam Library"
+        entries.append({"id": f"scam-{s['id']}", "title": f"Scam: {s['name']}", "threat": "Scam", "source": src,
+                        "text": f"{s['summary']} How it works: {' '.join(s['how'])} "
+                                f"Red flags: {' '.join(s['red_flags'])} {s.get('fact', '')}".strip()})
+        entries.append({"id": f"scam-{s['id']}-actions", "title": f"{s['name']}: what to do", "threat": "Scam",
+                        "source": src, "text": " ".join(f"{i}. {a}" for i, a in enumerate(s["do_now"], 1))})
+        for n, c in enumerate(s["cases"]):
+            entries.append({"id": f"scam-{s['id']}-case-{n}", "title": f"Real case: {c['title']}", "threat": "Scam",
+                            "source": c["source"], "text": f"{c['place']}, {c['year']}. {c['story']}"})
+    laws = library["laws"]
+    for n, law in enumerate(laws["india"] + laws["global"]):
+        penalty = f" Punishment: {law['penalty']}." if law.get("penalty") else ""
+        entries.append({"id": f"law-{n}", "title": f"Cyber law: {law['name']}", "threat": "Law",
+                        "source": "Scam Library (law summary, not legal advice)",
+                        "text": f"{law['about']}{penalty} {laws['disclaimer']}"})
+    report = library["report"]
+    entries.append({"id": "report-cybercrime", "title": "How to report cybercrime and online fraud",
+                    "threat": "Scam", "source": "Scam Library",
+                    "text": " ".join(f"{r['name']}: {r['about']}" for r in report["india"] + report["global"])})
+    return entries
+
+
 def main():
     playbooks = json.loads((KNOWLEDGE_DIR / "playbooks.json").read_text(encoding="utf-8"))
-    entries = playbook_entries(playbooks) + mitre_entries(playbooks)
+    library = json.loads((KNOWLEDGE_DIR / "scams.json").read_text(encoding="utf-8"))
+    entries = playbook_entries(playbooks) + mitre_entries(playbooks) + scam_entries(library)
     entries += [{"id": f"doc-{i}", "title": t, "threat": "General", "source": "Project documentation", "text": x}
                 for i, (t, x) in enumerate(PROJECT_DOCS)]
     (KNOWLEDGE_DIR / "kb.json").write_text(json.dumps(entries, indent=2, ensure_ascii=False), encoding="utf-8")

@@ -46,6 +46,7 @@ detector = FlowDetector(kb)
 url_checker = UrlChecker(kb)
 live_monitor = LiveMonitor(detector, kb)
 sessions = SessionStore()
+LIBRARY = json.loads((ROOT / "knowledge" / "scams.json").read_text(encoding="utf-8"))
 
 # Limits apply only when deployed (MULTI_USER). Keyed by client IP so clearing
 # cookies doesn't reset them; generous enough for a class sharing one network.
@@ -104,6 +105,12 @@ def find_analysis(request: Request, analysis_id: str) -> dict:
 
 
 # ---------- API ----------
+@app.get("/api/library")
+def library():
+    """Scam Library content: scam types, real cases with sources, cyber laws, where to report."""
+    return LIBRARY
+
+
 @app.get("/api/status")
 def status(request: Request):
     return {
@@ -241,6 +248,10 @@ Rules:
 - The system never blocks anything automatically; recommend actions for a human to decide.
 - Give defensive guidance only. Refuse to help carry out attacks.
 - Be concise: short paragraphs or bullet points. Mention MITRE ATT&CK IDs when relevant.
+- For questions about online scams or fraud (digital arrest, UPI, task scams, etc.), give the immediate
+  safe steps from the KNOWLEDGE. For victims in India, mention the 1930 helpline and cybercrime.gov.in.
+- For questions about cyber laws (IT Act, BNS, DPDP), summarise from the KNOWLEDGE and say it is general
+  information, not legal advice.
 """
 
 
@@ -328,7 +339,12 @@ def landing():
     return FileResponse(FRONTEND_DIR / "landing.html")
 
 
-APP_PAGES = {"dashboard", "live", "browsing", "traffic", "website", "history", "how-it-works", "about"}
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    return FileResponse(FRONTEND_DIR / "favicon.ico", headers={"Cache-Control": "public, max-age=86400"})
+
+
+APP_PAGES = {"dashboard", "live", "browsing", "traffic", "website", "history", "how-it-works", "about", "library"}
 
 
 @app.get("/app")

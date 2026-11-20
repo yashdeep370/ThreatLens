@@ -1,0 +1,480 @@
+{
+  "note": "Educational content for the Scam Library page and the chatbot knowledge base. Case facts were checked against the linked sources (November 2026). Law summaries are simplified and are not legal advice; always verify with the official text.",
+  "categories": ["Calls & video", "Messages & jobs", "Money & payments", "Attacks on organisations"],
+  "scams": [
+    {
+      "id": "digital-arrest",
+      "name": "Digital arrest",
+      "category": "Calls & video",
+      "region": "India",
+      "summary": "Fraudsters pose as CBI, police, customs, ED or TRAI officers and claim your Aadhaar, SIM or a parcel is linked to a crime. They keep you on a video call for hours or days, call it 'digital arrest', and make you transfer money to 'verify' or 'secure' it.",
+      "how": [
+        "A call or WhatsApp video call says a parcel in your name contained drugs, or your number is linked to money laundering.",
+        "The call is 'transferred' to a fake officer in uniform, sometimes in a fake police station or courtroom background.",
+        "You are told not to tell anyone and to stay on camera; fake arrest warrants and court documents are shown.",
+        "You are ordered to move savings or FDs into a 'safe RBI / court account' that belongs to the gang."
+      ],
+      "red_flags": [
+        "There is no such thing as a 'digital arrest' in Indian law; no agency arrests or questions people over video call.",
+        "Pressure to stay on call, keep it secret and act immediately.",
+        "Any request to transfer money to 'verify' it or keep it 'safe'."
+      ],
+      "do_now": [
+        "Disconnect the call. Real agencies send written notices and you can visit the station in person.",
+        "Do not transfer any money; if you already did, call 1930 immediately (the first hours matter for freezing funds).",
+        "Report at cybercrime.gov.in and report the number on Sanchar Saathi (Chakshu).",
+        "Tell family members, especially elderly relatives, who are the main targets."
+      ],
+      "cases": [
+        {
+          "title": "₹7 crore 'digital arrest' of industrialist S. P. Oswal",
+          "place": "Ludhiana, India",
+          "year": "2024",
+          "lat": 30.90, "lng": 75.85,
+          "story": "In August 2024 the chairman of Vardhman Textiles was defrauded of ₹7 crore by people impersonating CBI and other officials. They used fake documents and a simulated Supreme Court hearing over Skype to convince him he was under investigation. About ₹5.25 crore was later recovered from the accounts used.",
+          "source": "Wikipedia: S. P. Oswal (citing Punjab Police and press reports)",
+          "url": "https://en.wikipedia.org/wiki/S._P._Oswal"
+        }
+      ],
+      "fact": "The Ministry of Home Affairs reported losses of ₹120.3 crore from digital arrest scams, and the Supreme Court of India directed a pan-India CBI-coordinated probe in late 2025."
+    },
+    {
+      "id": "telegram-task",
+      "name": "Telegram / WhatsApp task scam",
+      "category": "Messages & jobs",
+      "region": "India and worldwide",
+      "summary": "A 'part-time job' offer pays you small amounts for liking YouTube videos or rating hotels. Then you are moved to 'prepaid tasks' where you must deposit money to earn bigger returns, and the money never comes back.",
+      "how": [
+        "A message offers ₹2,000–5,000 a day for simple online tasks.",
+        "The first few tasks really pay a small amount, which builds trust.",
+        "You are added to a Telegram group full of 'members' showing big profits and asked to deposit money for 'merchant' or 'VIP' tasks.",
+        "Your balance grows on a fake dashboard, but withdrawals need more 'tax' or 'unlock' fees until you stop paying."
+      ],
+      "red_flags": [
+        "Unsolicited job offers with high pay for trivial work.",
+        "Any job that asks you to pay or deposit money first.",
+        "Withdrawals blocked behind new fees."
+      ],
+      "do_now": [
+        "Stop paying immediately; extra 'fees' never unlock your money.",
+        "Save chat screenshots, UPI IDs and transaction IDs.",
+        "Call 1930 or report at cybercrime.gov.in, and inform your bank to raise a dispute."
+      ],
+      "cases": [
+        {
+          "title": "₹712 crore Telegram 'prepaid task' network",
+          "place": "Hyderabad, India",
+          "year": "2023",
+          "lat": 17.39, "lng": 78.49,
+          "story": "In July 2023 Hyderabad Police uncovered a fraud in which about 15,000 Indians were duped out of ₹712 crore in less than a year, all through 'prepaid tasks' offered on Telegram.",
+          "source": "Wikipedia: Telegram (software), fraud section",
+          "url": "https://en.wikipedia.org/wiki/Telegram_(software)"
+        }
+      ]
+    },
+    {
+      "id": "investment-crypto",
+      "name": "Investment & crypto scam (pig butchering)",
+      "category": "Money & payments",
+      "region": "Worldwide",
+      "summary": "A stranger befriends you on a dating app, social media or a 'wrong number' message, slowly builds trust, then introduces a trading or crypto app with huge returns. The app is fake; your money is 'fattened' and then taken.",
+      "how": [
+        "A friendly or romantic conversation runs for days or weeks before money is mentioned.",
+        "They show screenshots of their own profits and guide you to an app or website.",
+        "Small early withdrawals work, so you invest more, often borrowing from family.",
+        "When you try to withdraw a large amount, you are asked for 'taxes' or the account is frozen."
+      ],
+      "red_flags": [
+        "Guaranteed or unusually high returns.",
+        "Investment apps not registered with SEBI (India) or your country's regulator.",
+        "Someone you have never met in person guiding your investments."
+      ],
+      "do_now": [
+        "Check the platform on SEBI's registered intermediaries list before investing.",
+        "Never pay a fee to withdraw your own money.",
+        "Report to 1930 / cybercrime.gov.in, or IC3 (ic3.gov) in the USA."
+      ],
+      "cases": [
+        {
+          "title": "Scam compounds using trafficked workers",
+          "place": "Myawaddy, Myanmar",
+          "year": "2022–2025",
+          "lat": 16.69, "lng": 98.51,
+          "story": "Organised crime groups run scam centres in Myanmar, Cambodia and Laos, where people lured with fake IT jobs, including Indians, are forced to run romance and crypto scams against victims worldwide. Myawaddy on the Thailand border, with compounds such as KK Park, is one of the best-known hubs.",
+          "source": "Wikipedia: Scam center (citing UN and press reports)",
+          "url": "https://en.wikipedia.org/wiki/Scam_center"
+        }
+      ],
+      "fact": "Chainalysis estimated cryptocurrency fraud at about US$12.4 billion in 2024, with pig-butchering scams growing year over year."
+    },
+    {
+      "id": "kyc-otp",
+      "name": "KYC update, OTP & bank call fraud (vishing)",
+      "category": "Calls & video",
+      "region": "India",
+      "summary": "A caller or SMS claims to be from your bank, SBI, Paytm or a telecom company: your KYC has expired, your card will be blocked, or you have reward points. They ask for your OTP, card details or to install a 'support' app.",
+      "how": [
+        "An SMS says your account will be blocked today unless you update KYC through a link.",
+        "A caller who knows your name and bank asks you to read out the OTP 'to verify'.",
+        "Or you are asked to install a screen-sharing app such as AnyDesk so they can 'help'.",
+        "The OTP or remote access is used to move money out of your account."
+      ],
+      "red_flags": [
+        "Anyone asking for an OTP, PIN, CVV or full card number. Banks never ask.",
+        "Urgency: 'your account will be blocked in 2 hours'.",
+        "Requests to install screen-sharing or remote-access apps."
+      ],
+      "do_now": [
+        "Never share an OTP; it is the key that authorises a payment.",
+        "Hang up and call the number printed on your card or the bank's official website.",
+        "If money was taken, block the card in your bank app, call 1930 and report at cybercrime.gov.in."
+      ],
+      "cases": [
+        {
+          "title": "Jamtara, the 'phishing capital of India'",
+          "place": "Jamtara, India",
+          "year": "2010s onwards",
+          "lat": 23.96, "lng": 86.80,
+          "story": "Since the 2010s Jamtara in Jharkhand has been nicknamed the 'phishing capital of India' because many pan-Indian phone-banking frauds were traced there. The 2020 Netflix series 'Jamtara – Sabka Number Ayega' is a fictionalised look at these operations.",
+          "source": "Wikipedia: Jamtara",
+          "url": "https://en.wikipedia.org/wiki/Jamtara"
+        }
+      ]
+    },
+    {
+      "id": "upi-collect",
+      "name": "UPI 'collect request' & QR code fraud",
+      "category": "Money & payments",
+      "region": "India",
+      "summary": "A buyer on OLX or a caller says they are sending you money, then sends a UPI 'collect request' or a QR code. Entering your PIN or scanning it actually sends money from your account.",
+      "how": [
+        "You list something for sale; a 'buyer' (often claiming to be in the army) agrees instantly.",
+        "They send a QR code or collect request and say 'enter your PIN to receive the payment'.",
+        "Your PIN approves a debit, not a credit.",
+        "They claim it was a mistake and ask you to try again with a bigger amount."
+      ],
+      "red_flags": [
+        "Being asked to enter your UPI PIN to receive money.",
+        "Buyers who agree without seeing the item and insist on QR codes.",
+        "'Refund' requests for an amount you never received."
+      ],
+      "do_now": [
+        "Remember: a UPI PIN is only needed to send money, never to receive it.",
+        "Decline unknown collect requests in your UPI app.",
+        "If money was debited, raise a complaint in the UPI app, call 1930 and report at cybercrime.gov.in."
+      ],
+      "cases": []
+    },
+    {
+      "id": "fake-lottery",
+      "name": "Fake lottery, KBC prize & lucky draw",
+      "category": "Messages & jobs",
+      "region": "India and worldwide",
+      "summary": "A WhatsApp message, often with a fake KBC or company logo and a voice note, says you have won ₹25 lakh or a car. To claim it you must pay a 'processing fee', GST or 'RBI clearance' charge.",
+      "how": [
+        "A message or call from a foreign number announces that you won a lottery you never entered.",
+        "Official-looking certificates, logos and a 'manager' contact are shared.",
+        "You pay one fee, then another (tax, insurance, transfer charge).",
+        "The prize never arrives."
+      ],
+      "red_flags": [
+        "Winning a contest you never entered.",
+        "Paying money to receive a prize.",
+        "International numbers using a TV show's name or logo."
+      ],
+      "do_now": [
+        "Ignore and block; genuine prizes never ask for fees upfront.",
+        "Report the number on Sanchar Saathi (Chakshu) and in WhatsApp.",
+        "If you paid, call 1930 and report at cybercrime.gov.in."
+      ],
+      "cases": []
+    },
+    {
+      "id": "whatsapp-impersonation",
+      "name": "WhatsApp impersonation ('Hi Mum' / boss scam)",
+      "category": "Messages & jobs",
+      "region": "Worldwide",
+      "summary": "A message from an unknown number claims to be your child, friend or boss with a 'new number'. They urgently need money for a bill, a hospital or gift cards. Widely reported as the 'Hi Mum' scam in the UK and Australia.",
+      "how": [
+        "'Hi, this is my new number, my phone broke.'",
+        "A display picture copied from the real person's profile makes it convincing.",
+        "An urgent request follows: pay a bill, transfer money, buy gift cards.",
+        "Excuses for not being able to talk on a voice call."
+      ],
+      "red_flags": [
+        "A known person writing from a new number and immediately asking for money.",
+        "Refusal to take a voice or video call.",
+        "Requests for gift cards or payments to a third party's account."
+      ],
+      "do_now": [
+        "Call the person on their old, saved number to verify.",
+        "Ask a question only the real person would know.",
+        "Report and block the number; report losses to 1930 / cybercrime.gov.in."
+      ],
+      "cases": []
+    },
+    {
+      "id": "sextortion",
+      "name": "Sextortion video call",
+      "category": "Calls & video",
+      "region": "India and worldwide",
+      "summary": "A stranger on social media or a dating app starts a video call, records it (often with explicit content on their side), then threatens to send the edited clip to your contacts unless you pay. Sometimes a fake 'police officer' calls next.",
+      "how": [
+        "A friendly profile befriends you and moves the chat to WhatsApp.",
+        "A surprise video call shows explicit content while your face is recorded.",
+        "Threats to send the video to your family and contacts follow within minutes.",
+        "After one payment, the demands continue."
+      ],
+      "red_flags": [
+        "Unexpected video calls from new contacts.",
+        "Fast escalation from friendly chat to explicit content.",
+        "Threats and payment demands; paying never ends them."
+      ],
+      "do_now": [
+        "Do not pay. Stop responding and block, but keep screenshots as evidence.",
+        "Report at cybercrime.gov.in (choose the women/child-related or other cybercrime section) or call 1930.",
+        "Report the account to the platform; talk to someone you trust. You are the victim, not the offender."
+      ],
+      "cases": []
+    },
+    {
+      "id": "fake-customer-care",
+      "name": "Fake customer care numbers",
+      "category": "Calls & video",
+      "region": "India and worldwide",
+      "summary": "Scammers list fake helpline numbers for banks, airlines, food delivery or e-commerce sites on search results, maps and social media. When you call for a refund, they take control of your phone or payments.",
+      "how": [
+        "You search 'X customer care number' and call the first result.",
+        "The 'agent' asks you to install a support app or fill a refund form.",
+        "Or you are asked to pay ₹10 'to process the refund' through a link.",
+        "Your bank details or remote access are used to drain the account."
+      ],
+      "red_flags": [
+        "Helpline numbers from search ads, forums or social media instead of the official app or website.",
+        "Refunds that require you to pay or install an app.",
+        "Personal mobile numbers presented as company helplines."
+      ],
+      "do_now": [
+        "Use the help section inside the official app or the company's verified website.",
+        "Never install remote-access apps on a stranger's request.",
+        "If you lost money, call 1930 and your bank immediately."
+      ],
+      "cases": []
+    },
+    {
+      "id": "loan-app",
+      "name": "Illegal instant loan apps",
+      "category": "Money & payments",
+      "region": "India",
+      "summary": "Apps promise instant loans without documents, demand access to your contacts and photos, charge huge hidden fees, and then harass and threaten borrowers by messaging their contacts with morphed images.",
+      "how": [
+        "An app offers instant credit with no checks and asks for contacts, gallery and SMS permissions.",
+        "You receive much less than promised after 'processing fees'.",
+        "Repayment is demanded within days, with very high interest.",
+        "Recovery agents abuse and threaten you and message your contacts."
+      ],
+      "red_flags": [
+        "Lenders not linked to an RBI-registered bank or NBFC.",
+        "Apps that demand contacts and gallery access.",
+        "Repayment periods of a few days and unclear fees."
+      ],
+      "do_now": [
+        "Borrow only from RBI-regulated banks and NBFCs; check the NBFC name in the app's details.",
+        "Revoke the app's permissions and uninstall it; keep evidence of harassment.",
+        "Report at cybercrime.gov.in or call 1930, and complain on RBI's Sachet portal."
+      ],
+      "cases": []
+    },
+    {
+      "id": "ceo-deepfake",
+      "name": "CEO fraud, business email compromise & deepfakes",
+      "category": "Attacks on organisations",
+      "region": "Worldwide",
+      "summary": "Attackers impersonate a company's CEO, CFO or a supplier by email, voice clone or even a deepfake video call, and instruct finance staff to make an urgent, confidential transfer.",
+      "how": [
+        "A spoofed or look-alike email from 'the CEO' asks for a secret, urgent payment.",
+        "Or a supplier's 'new bank details' arrive by email.",
+        "Newer attacks use AI voice cloning or deepfake video of real executives.",
+        "Staff follow the instruction because it appears to come from the top."
+      ],
+      "red_flags": [
+        "Urgent, confidential payment requests that skip normal approval.",
+        "Changes to supplier bank details sent by email.",
+        "Unusual behaviour on a video call: poor sync, people who will not interact."
+      ],
+      "do_now": [
+        "Verify every payment instruction through a second channel (call a known number).",
+        "Require two-person approval for large transfers and bank-detail changes.",
+        "If money was sent, contact your bank immediately to recall the transfer, and report to police."
+      ],
+      "cases": [
+        {
+          "title": "US$25 million lost in a deepfake video call (Arup)",
+          "place": "Hong Kong",
+          "year": "2024",
+          "lat": 22.32, "lng": 114.17,
+          "story": "An employee at the Hong Kong office of engineering firm Arup was tricked into transferring about US$25 million after a video call in which the 'CFO' and other colleagues were AI-generated deepfakes.",
+          "source": "Wikipedia: Arup Group (citing The Guardian)",
+          "url": "https://en.wikipedia.org/wiki/Arup_Group"
+        },
+        {
+          "title": "US$46.7 million spear-phishing of Ubiquiti",
+          "place": "United States",
+          "year": "2015",
+          "story": "Attackers sent spear-phishing emails impersonating executives to Ubiquiti's finance staff and got them to wire about US$46.7 million to accounts overseas.",
+          "source": "Wikipedia: Social hacking",
+          "url": "https://en.wikipedia.org/wiki/Social_hacking"
+        }
+      ]
+    },
+    {
+      "id": "phishing",
+      "name": "Phishing links & social engineering",
+      "category": "Attacks on organisations",
+      "region": "Worldwide",
+      "summary": "Fake emails, SMS and websites imitate trusted brands (electricity board, courier, bank, Netflix, government) to steal passwords and card details, or to trick employees into giving attackers access.",
+      "how": [
+        "A message warns of a problem (unpaid bill, failed delivery, suspicious login) with a link.",
+        "The link opens a look-alike login page on a strange domain.",
+        "Credentials are stolen and used immediately, sometimes to take over accounts.",
+        "In companies, phishing is often the first step of a much bigger attack."
+      ],
+      "red_flags": [
+        "Misspelled or extra words in the domain (paypal-login-verify.xyz).",
+        "Urgent threats and short deadlines.",
+        "Login pages reached from a message rather than typed in yourself."
+      ],
+      "do_now": [
+        "Check suspicious links with ThreatLens Website Check before opening them.",
+        "Turn on two-factor authentication; change the password if you entered it anywhere suspicious.",
+        "Report phishing to the brand and at cybercrime.gov.in; companies should report incidents to CERT-In."
+      ],
+      "cases": [
+        {
+          "title": "Twitter accounts of Obama, Musk and others hijacked",
+          "place": "San Francisco, USA",
+          "year": "2020",
+          "lat": 37.77, "lng": -122.42,
+          "story": "In July 2020 attackers used phone-based social engineering against Twitter staff to take over 130 high-profile accounts and post a 'send bitcoin and get double back' scam. One wallet received over 320 deposits worth more than US$110,000 before the tweets were removed. A 17-year-old was among those charged.",
+          "source": "Wikipedia: 2020 Twitter account hijacking",
+          "url": "https://en.wikipedia.org/wiki/2020_Twitter_account_hijacking"
+        }
+      ]
+    },
+    {
+      "id": "ransomware",
+      "name": "Ransomware",
+      "category": "Attacks on organisations",
+      "region": "Worldwide",
+      "summary": "Malware encrypts an organisation's files and systems and demands payment, usually in cryptocurrency, for the key. Modern gangs also steal data and threaten to leak it.",
+      "how": [
+        "Entry through a phishing email, a stolen password or an unpatched system.",
+        "The attacker spreads through the network and disables backups.",
+        "Files are encrypted at once and a ransom note appears.",
+        "Services such as hospitals or factories stop working."
+      ],
+      "red_flags": [
+        "Unpatched systems and old operating systems.",
+        "Shared or reused admin passwords; no MFA on remote access.",
+        "No offline backups."
+      ],
+      "do_now": [
+        "Isolate affected machines from the network immediately.",
+        "Report to CERT-In within 6 hours (required for many organisations in India) and to police.",
+        "Restore from offline backups; paying does not guarantee recovery."
+      ],
+      "cases": [
+        {
+          "title": "AIIMS Delhi servers hit by ransomware",
+          "place": "New Delhi, India",
+          "year": "2022",
+          "lat": 28.57, "lng": 77.21,
+          "story": "On 23 November 2022 the servers of AIIMS Delhi were hit by ransomware after an employee opened a phishing email. CERT-In, Delhi Police, NIC and others investigated, and a case of extortion and cyber terrorism was registered.",
+          "source": "Wikipedia: AIIMS Delhi, server attack section",
+          "url": "https://en.wikipedia.org/wiki/All_India_Institute_of_Medical_Sciences,_Delhi"
+        },
+        {
+          "title": "WannaCry hits 150 countries and the UK's NHS",
+          "place": "United Kingdom",
+          "year": "2017",
+          "lat": 51.51, "lng": -0.13,
+          "story": "In May 2017 the WannaCry ransomware worm spread through unpatched Windows computers, infecting around 200,000 machines in 150 countries (Europol estimate). At least 81 of 236 NHS trusts in England were affected and some ambulances were diverted.",
+          "source": "Wikipedia: WannaCry ransomware attack",
+          "url": "https://en.wikipedia.org/wiki/WannaCry_ransomware_attack"
+        }
+      ]
+    },
+    {
+      "id": "bank-heist",
+      "name": "Bank & payment-system heists",
+      "category": "Attacks on organisations",
+      "region": "Worldwide",
+      "summary": "Attackers break into a bank's internal systems (SWIFT terminals, ATM switches) and send fraudulent transfers or cash out through cloned cards across many countries at once.",
+      "how": [
+        "Initial access through phishing or malware on bank staff computers.",
+        "Attackers study internal payment systems for weeks.",
+        "Fraudulent SWIFT messages or ATM authorisations are sent, often on holidays or weekends.",
+        "Money is moved quickly through accounts and casinos in other countries."
+      ],
+      "red_flags": [
+        "Weak segmentation between office networks and payment systems.",
+        "No monitoring of unusual transfers outside working hours.",
+        "Shared credentials for critical systems."
+      ],
+      "do_now": [
+        "Separate payment systems from the office network and require MFA.",
+        "Monitor and alert on unusual transaction patterns (the kind of anomaly detection ThreatLens demonstrates).",
+        "Have an incident response plan with the payment network and regulators."
+      ],
+      "cases": [
+        {
+          "title": "US$81 million stolen from Bangladesh Bank via SWIFT",
+          "place": "Dhaka, Bangladesh",
+          "year": "2016",
+          "lat": 23.81, "lng": 90.41,
+          "story": "In February 2016 attackers sent 35 fraudulent SWIFT instructions to move nearly US$1 billion from Bangladesh Bank's account at the Federal Reserve Bank of New York. Most were blocked (one because of a spelling mistake), but US$81 million reached the Philippines and only a small part has been recovered.",
+          "source": "Wikipedia: Bangladesh Bank robbery",
+          "url": "https://en.wikipedia.org/wiki/Bangladesh_Bank_robbery",
+          "flows": [{"lat": 40.71, "lng": -74.01, "label": "Federal Reserve Bank of New York"}, {"lat": 14.60, "lng": 120.98, "label": "Manila, Philippines"}]
+        }
+      ]
+    }
+  ],
+  "laws": {
+    "disclaimer": "Simplified summaries for awareness only, not legal advice. Punishments are maximums; verify the current official text at indiacode.nic.in.",
+    "india": [
+      {"name": "IT Act 2000, Section 43", "about": "Unauthorised access, downloading data, introducing viruses or damaging a computer system.", "penalty": "Compensation to the affected person"},
+      {"name": "IT Act, Section 66", "about": "Computer-related offences: doing any act in Section 43 dishonestly or fraudulently (hacking).", "penalty": "Up to 3 years and/or fine up to ₹5 lakh"},
+      {"name": "IT Act, Section 66C", "about": "Identity theft: fraudulently using someone's password, electronic signature or other unique identification.", "penalty": "Up to 3 years and fine up to ₹1 lakh"},
+      {"name": "IT Act, Section 66D", "about": "Cheating by personation using a computer or phone, the section used against most online impersonation scams.", "penalty": "Up to 3 years and fine up to ₹1 lakh"},
+      {"name": "IT Act, Section 66E", "about": "Violation of privacy: capturing or sharing images of a person's private areas without consent.", "penalty": "Up to 3 years or fine up to ₹2 lakh"},
+      {"name": "IT Act, Section 66F", "about": "Cyber terrorism: attacks that threaten the unity, security or sovereignty of India or critical infrastructure.", "penalty": "Up to life imprisonment"},
+      {"name": "IT Act, Sections 67, 67A, 67B", "about": "Publishing or sharing obscene, sexually explicit or child sexual abuse material electronically.", "penalty": "3 to 7 years and fines up to ₹10 lakh, depending on the section and repeat offence"},
+      {"name": "IT Act, Section 72", "about": "Breach of confidentiality and privacy by a person who gained access to data through official powers.", "penalty": "Up to 2 years and/or fine up to ₹1 lakh"},
+      {"name": "IT Act, Section 70B", "about": "Establishes CERT-In as the national agency for cyber incident response. CERT-In's 2022 directions require many organisations to report cyber incidents within 6 hours.", "penalty": "Regulatory requirement"},
+      {"name": "Bharatiya Nyaya Sanhita 2023 (in force from 1 July 2024)", "about": "Replaced the IPC. Section 318 (cheating, earlier IPC 420), 319 (cheating by personation), 308 (extortion, used for sextortion), 351 (criminal intimidation) and 111 (organised crime, which explicitly includes cyber-crimes) are applied together with the IT Act.", "penalty": "Varies by section"},
+      {"name": "Digital Personal Data Protection Act 2023", "about": "Gives people rights over their personal data and makes organisations responsible for protecting it. The DPDP Rules were notified on 14 November 2025 with phased compliance.", "penalty": "Penalties on organisations up to ₹250 crore for failing to take reasonable security safeguards"},
+      {"name": "Shreya Singhal v. Union of India (2015)", "about": "The Supreme Court struck down Section 66A of the IT Act (punishing 'offensive' messages) as unconstitutional for violating free speech. A good example of balancing cyber law with rights.", "penalty": "Landmark judgment"}
+    ],
+    "global": [
+      {"name": "Budapest Convention on Cybercrime (2001)", "about": "Council of Europe treaty and the first international cybercrime treaty, harmonising laws and cooperation between countries. India is not a party."},
+      {"name": "UN Convention against Cybercrime (Hanoi Convention)", "about": "Adopted by the UN General Assembly in December 2024; the signing ceremony was held in Hanoi in October 2025. It aims at international cooperation in cybercrime investigations."},
+      {"name": "GDPR (European Union, 2018)", "about": "Strict data protection law; fines up to €20 million or 4% of global annual turnover."},
+      {"name": "Computer Fraud and Abuse Act (USA, 1986)", "about": "The main US anti-hacking law, making unauthorised access to computers a federal crime."},
+      {"name": "Computer Misuse Act (UK, 1990)", "about": "Criminalises unauthorised access to computer material and impairing computer systems."}
+    ]
+  },
+  "report": {
+    "india": [
+      {"name": "Call 1930", "about": "National Cyber Crime Helpline. Call immediately after financial fraud so banks can try to freeze the money.", "url": "tel:1930"},
+      {"name": "cybercrime.gov.in", "about": "National Cyber Crime Reporting Portal (MHA / I4C). File a complaint online and track it.", "url": "https://cybercrime.gov.in"},
+      {"name": "Sanchar Saathi (Chakshu)", "about": "Report suspected fraud calls, SMS and WhatsApp messages, and check which SIMs are registered in your name.", "url": "https://sancharsaathi.gov.in"},
+      {"name": "Your bank", "about": "Call the official number on your card to block cards and raise a fraud dispute."},
+      {"name": "CERT-In", "about": "Organisations report cyber security incidents (such as ransomware) here.", "url": "https://www.cert-in.org.in"}
+    ],
+    "global": [
+      {"name": "IC3 (USA)", "about": "FBI Internet Crime Complaint Center.", "url": "https://www.ic3.gov"},
+      {"name": "Elsewhere", "about": "Use your country's national cybercrime portal or local police, and contact your bank first."}
+    ]
+  }
+}

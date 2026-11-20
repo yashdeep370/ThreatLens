@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ThreatLens - AI Threat Detection</title>
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/assets/favicon-32.png">
+  <link rel="apple-touch-icon" href="/static/assets/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/styles.css">
@@ -42,6 +45,7 @@
       <a href="/app/live" data-view="live"><span class="mi">◉</span>Live Monitoring</a>
       <a href="/app/dashboard" data-view="dashboard"><span class="mi">◧</span>Dashboard</a>
       <div class="menu-divider"></div>
+      <a href="/app/library" data-view="library"><span class="mi">◍</span>Scam Library</a>
       <a href="/app/history" data-view="history"><span class="mi">☰</span>History</a>
       <a href="/app/how-it-works" data-view="how"><span class="mi">⚙</span>How it works</a>
       <a href="/app/about" data-view="about"><span class="mi">ⓘ</span>About</a>
@@ -342,6 +346,52 @@
         </div>
       </div>
     </section>
+
+    <!-- SCAM LIBRARY -->
+    <section class="view" id="view-library">
+      <header class="page-head"><div><h1>Scam Library</h1><p class="muted">Real online frauds from India and around the world: how they work, the warning signs, and what to do if it ever happens to you.</p></div></header>
+
+      <a class="lib-help" href="tel:1930">
+        <span class="lib-help-num">1930</span>
+        <span><b>Lost money to a scam? Call 1930 right away.</b><br><span class="muted">India's National Cyber Crime Helpline. The sooner you call, the better the chance of freezing the money. Also report at cybercrime.gov.in.</span></span>
+      </a>
+
+      <div class="lib-layout">
+        <div class="lib-left">
+          <div class="lib-tabs" role="tablist">
+            <button class="lib-tab active" data-tab="scams" role="tab">Scams &amp; cases</button>
+            <button class="lib-tab" data-tab="laws" role="tab">Cyber laws</button>
+            <button class="lib-tab" data-tab="report" role="tab">Where to report</button>
+          </div>
+
+          <div class="lib-pane" id="lib-pane-scams">
+            <div class="lib-search url-form">
+              <span class="ai-spark">⌕</span>
+              <input type="text" id="lib-search" placeholder="Search: digital arrest, UPI, Telegram, lottery…" autocomplete="off">
+            </div>
+            <div class="lib-chips" id="lib-chips"></div>
+            <div id="lib-list" class="lib-list"><p class="muted">Loading…</p></div>
+          </div>
+          <div class="lib-pane" id="lib-pane-laws" hidden></div>
+          <div class="lib-pane" id="lib-pane-report" hidden></div>
+        </div>
+
+        <aside class="lib-right">
+          <div class="lib-globe-card">
+            <div class="lib-globe" id="lib-globe"></div>
+            <div class="lib-globe-info" id="lib-globe-info">
+              <div class="card-label">Real cases around the world</div>
+              <p class="muted">Click a glowing point to read that case. Drag to rotate.</p>
+            </div>
+            <div class="lib-legend">
+              <span><i class="lg-dot"></i>Documented case</span>
+              <span><i class="lg-arc gold"></i>Documented money flow</span>
+              <span><i class="lg-arc"></i>Illustrative link</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
   </main>
 
   <footer class="site-footer" id="site-footer">
@@ -374,6 +424,7 @@
           <h4>EXPLORE</h4>
           <ul>
             <li><a href="/app" data-view="home">Home</a></li>
+            <li><a href="/app/library" data-view="library">Scam Library</a></li>
             <li><a href="/app/history" data-view="history">History</a></li>
             <li><a href="/app/how-it-works" data-view="how">How it works</a></li>
             <li><a href="/app/about" data-view="about">About</a></li>

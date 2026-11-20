@@ -157,7 +157,7 @@ function recList(recs) {
 const ROUTES = {
   home: "/app", dashboard: "/app/dashboard", live: "/app/live", browsing: "/app/browsing",
   traffic: "/app/traffic", website: "/app/website", history: "/app/history",
-  how: "/app/how-it-works", about: "/app/about",
+  how: "/app/how-it-works", about: "/app/about", library: "/app/library",
 };
 const viewFromPath = p => Object.keys(ROUTES).find(k => ROUTES[k] === p.replace(/\/+$/, "")) || "home";
 
@@ -240,6 +240,7 @@ function afterShow(view) {
   typeTitle(view);
   if (view === "dashboard") loadDashboard();
   if (view === "history") loadHistory();
+  libraryVisibility(view === "library");
   homeVisibility(view === "home");
   window.scrollTo(0, 0);
 }
@@ -983,6 +984,268 @@ $("#footer-check").addEventListener("submit", e => {
   $("#footer-url").value = "";
   $("#url-form").requestSubmit();
 });
+
+// ---------- Scam Library (wiki of real scams, cases, cyber laws + globe) ----------
+const GLOBE_SRC = "https://cdn.jsdelivr.net/npm/globe.gl@2.41.6/dist/globe.gl.min.js";
+const lib = { data: null, loading: null, globe: null, cat: "All", query: "", openId: null };
+
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+async function libraryVisibility(visible) {
+  if (!visible) { lib.globe && lib.globe.pauseAnimation(); return; }
+  if (!lib.loading) lib.loading = initLibrary();
+  await lib.loading;
+  if (lib.globe) { lib.globe.resumeAnimation(); sizeGlobe(); }
+}
+
+async function initLibrary() {
+  try {
+    lib.data = await api("/api/library");
+  } catch {
+    $("#lib-list").innerHTML = `<p class="muted">Could not load the library. Please refresh.</p>`;
+    return;
+  }
+  renderLibChips();
+  renderLibList();
+  renderLaws();
+  renderReport();
+  // not awaited: the cards are usable while the globe downloads. Started after the page title has
+  // typed, so WebGL setup doesn't stutter the entrance animation on slower machines.
+  setTimeout(initGlobe, 1300);
+}
+
+// every case with coordinates becomes a point on the globe
+function libCases() {
+  return lib.data.scams.flatMap(s => s.cases.filter(c => c.lat != null).map(c => ({ ...c, scamId: s.id, scamName: s.name })));
+}
+
+function renderLibChips() {
+  const cats = ["All", ...lib.data.categories];
+  $("#lib-chips").innerHTML = cats.map(c =>
+    `<button class="lib-chip${c === lib.cat ? " active" : ""}" data-cat="${esc(c)}">${esc(c)}</button>`).join("");
+}
+
+function scamMatches(s) {
+  if (lib.cat !== "All" && s.category !== lib.cat) return false;
+  if (!lib.query) return true;
+  const hay = [s.name, s.summary, s.region, ...s.how, ...s.red_flags, ...s.cases.map(c => `${c.title} ${c.place} ${c.story}`)]
+    .join(" ").toLowerCase();
+  return lib.query.split(/\s+/).every(w => hay.includes(w));
+}
+
+function caseHtml(c) {
+  const where = c.lat != null ? `<button class="link lib-locate" data-lat="${c.lat}" data-lng="${c.lng}">📍 Show on globe</button>` : "";
+  return `<div class="lib-case">
+    <div class="lib-case-head"><b>${esc(c.title)}</b><span class="muted">${esc(c.place)} · ${esc(c.year)}</span></div>
+    <p>${esc(c.story)}</p>
+    <div class="lib-case-src">Source: ${c.url ? `<a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.source)} ↗</a>` : esc(c.source)} ${where}</div>
+  </div>`;
+}
+
+function scamCard(s) {
+  const open = s.id === lib.openId;
+  return `<article class="lib-card${open ? " open" : ""}" id="scam-${s.id}">
+    <button class="lib-card-head" data-scam="${s.id}" aria-expanded="${open}">
+      <div>
+        <div class="lib-card-meta"><span class="lib-cat">${esc(s.category)}</span><span class="muted">${esc(s.region)}</span>${s.cases.length ? `<span class="lib-case-count">${s.cases.length} real case${s.cases.length > 1 ? "s" : ""}</span>` : ""}</div>
+        <h3>${esc(s.name)}</h3>
+        <p class="muted">${esc(s.summary)}</p>
+      </div>
+      <span class="chev">⌄</span>
+    </button>
+    <div class="lib-card-body">
+      <div class="lib-cols">
+        <div><h4>How it works</h4><ol>${s.how.map(x => `<li>${esc(x)}</li>`).join("")}</ol></div>
+        <div><h4 class="warn">Red flags</h4><ul>${s.red_flags.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>
+      </div>
+      <div class="lib-do"><h4>What to do if it happens to you</h4><ol>${s.do_now.map(x => `<li>${esc(x)}</li>`).join("")}</ol></div>
+      ${s.fact ? `<p class="lib-fact">📊 ${esc(s.fact)}</p>` : ""}
+      ${s.cases.length ? `<h4>Real cases</h4>${s.cases.map(caseHtml).join("")}` : ""}
+      <button class="btn small" data-ask="${esc(`I think I'm facing a ${s.name} scam. What should I do right now?`)}">💬 Ask AI about this scam</button>
+    </div>
+  </article>`;
+}
+
+function renderLibList() {
+  const items = lib.data.scams.filter(scamMatches);
+  $("#lib-list").innerHTML = items.length ? items.map(scamCard).join("")
+    : `<p class="muted">No scams match “${esc(lib.query)}”. Try another word, or ask the AI assistant.</p>`;
+}
+
+function renderLaws() {
+  const L = lib.data.laws;
+  const row = l => `<div class="lib-law"><div><b>${esc(l.name)}</b><p class="muted">${esc(l.about)}</p></div>${l.penalty ? `<span class="lib-penalty">${esc(l.penalty)}</span>` : ""}</div>`;
+  $("#lib-pane-laws").innerHTML = `
+    <p class="lib-disclaimer">⚖️ ${esc(L.disclaimer)}</p>
+    <div class="card"><div class="card-label">India</div>${L.india.map(row).join("")}</div>
+    <div class="card"><div class="card-label">International</div>${L.global.map(row).join("")}</div>
+    <a class="btn" href="https://www.indiacode.nic.in" target="_blank" rel="noopener">Read the official IT Act on India Code ↗</a>`;
+}
+
+function renderReport() {
+  const R = lib.data.report;
+  const row = r => `<${r.url ? `a href="${esc(r.url)}"${r.url.startsWith("http") ? ' target="_blank" rel="noopener"' : ""}` : "div"} class="lib-report">
+    <b>${esc(r.name)}${r.url && r.url.startsWith("http") ? " ↗" : ""}</b><span class="muted">${esc(r.about)}</span></${r.url ? "a" : "div"}>`;
+  $("#lib-pane-report").innerHTML = `
+    <div class="card"><div class="card-label">India</div><div class="lib-report-grid">${R.india.map(row).join("")}</div></div>
+    <div class="card"><div class="card-label">Outside India</div><div class="lib-report-grid">${R.global.map(row).join("")}</div></div>
+    <div class="card prose"><div class="card-label">Before you report, keep</div>
+      <ul><li>Screenshots of chats, call logs and profiles</li><li>Phone numbers, UPI IDs, bank account numbers and websites used</li><li>Transaction IDs and the date and time of each payment</li></ul></div>`;
+}
+
+function openScam(id, { scroll = true } = {}) {
+  lib.openId = id;
+  if (!lib.data.scams.filter(scamMatches).some(s => s.id === id)) { lib.cat = "All"; lib.query = ""; $("#lib-search").value = ""; renderLibChips(); }
+  switchLibTab("scams");
+  renderLibList();
+  const card = $(`#scam-${id}`);
+  if (card && scroll) {
+    card.scrollIntoView({ behavior: "smooth", block: "start" });
+    card.classList.add("flash");
+    setTimeout(() => card.classList.remove("flash"), 1600);
+  }
+}
+
+function switchLibTab(tab) {
+  $$(".lib-tab").forEach(t => t.classList.toggle("active", t.dataset.tab === tab));
+  $$(".lib-pane").forEach(p => { p.hidden = p.id !== `lib-pane-${tab}`; });
+}
+
+$("#view-library").addEventListener("click", e => {
+  const tab = e.target.closest(".lib-tab");
+  if (tab) return switchLibTab(tab.dataset.tab);
+  const chip = e.target.closest(".lib-chip");
+  if (chip) { lib.cat = chip.dataset.cat; renderLibChips(); renderLibList(); return; }
+  const head = e.target.closest(".lib-card-head");
+  if (head) {
+    const id = head.dataset.scam;
+    lib.openId = lib.openId === id ? null : id;
+    $$(".lib-card").forEach(c => {
+      const on = c.id === `scam-${lib.openId}`;
+      c.classList.toggle("open", on);
+      c.querySelector(".lib-card-head").setAttribute("aria-expanded", on);
+    });
+    const s = lib.data.scams.find(x => x.id === lib.openId);
+    const c = s && s.cases.find(x => x.lat != null);
+    if (c) focusGlobe(c);
+    return;
+  }
+  const loc = e.target.closest(".lib-locate");
+  if (loc) focusGlobe({ lat: +loc.dataset.lat, lng: +loc.dataset.lng }, true);
+});
+$("#lib-search").addEventListener("input", e => { lib.query = e.target.value.trim().toLowerCase(); renderLibList(); });
+
+// ----- globe -----
+function globeArcs(cases) {
+  const arcs = [];
+  // documented money flows from the case data (e.g. Dhaka -> New York Fed -> Manila)
+  cases.forEach(c => {
+    let from = c;
+    (c.flows || []).forEach(f => { arcs.push({ startLat: from.lat, startLng: from.lng, endLat: f.lat, endLng: f.lng, real: true }); from = f; });
+  });
+  // illustrative links between cases (cybercrime crosses borders), clearly labelled in the legend
+  cases.forEach((c, i) => {
+    const d = cases[(i + 3) % cases.length];
+    if (d !== c) arcs.push({ startLat: c.lat, startLng: c.lng, endLat: d.lat, endLng: d.lng, real: false });
+  });
+  return arcs;
+}
+
+function showGlobeInfo(c) {
+  $("#lib-globe-info").innerHTML = `<div class="card-label">${esc(c.place)} · ${esc(c.year)}</div>
+    <b>${esc(c.title)}</b>
+    <p class="muted">${esc(c.story.length > 170 ? c.story.slice(0, 170) + "…" : c.story)}</p>
+    <button class="btn small" data-open-scam="${c.scamId}">Read about ${esc(c.scamName)} →</button>`;
+}
+$("#lib-globe-info").addEventListener("click", e => {
+  const b = e.target.closest("[data-open-scam]");
+  if (b) openScam(b.dataset.openScam);
+});
+
+function focusGlobe(c, pause = false) {
+  if (!lib.globe) return;
+  lib.globe.controls().autoRotate = false;
+  // look slightly north of the case so it lands below the info panel, not under it (desktop only:
+  // on small screens the panel sits below the globe)
+  const lift = matchMedia("(max-width: 980px)").matches ? 0 : 12;
+  lib.globe.pointOfView({ lat: Math.min(c.lat + lift, 80), lng: c.lng, altitude: 2.1 }, 1200);
+  const full = libCases().find(x => x.lat === c.lat && x.lng === c.lng);
+  if (full) showGlobeInfo(full);
+  clearTimeout(lib.resume);
+  const ms = pause ? 12000 : 8000;
+  lib.focusUntil = Date.now() + ms;
+  lib.resume = setTimeout(() => { if (lib.globe && !lib.hover) lib.globe.controls().autoRotate = true; }, ms);
+}
+
+function sizeGlobe() {
+  const el = $("#lib-globe");
+  if (lib.globe && el.clientWidth) lib.globe.width(el.clientWidth).height(el.clientHeight);
+}
+addEventListener("resize", () => { if (document.body.dataset.view === "library") sizeGlobe(); });
+
+// hotspot look; called again on hover so the hovered point grows and turns white
+function stylePoints(g) {
+  const h = lib.hover;
+  g.pointColor(c => c === h ? "#ffffff" : "#f472b6")
+    .pointAltitude(c => c === h ? 0.08 : 0.035)
+    .pointRadius(c => c === h ? 1.3 : 1.0);
+}
+
+async function initGlobe() {
+  const el = $("#lib-globe");
+  try {
+    if (!window.Globe) await loadScript(GLOBE_SRC);
+  } catch {
+    el.innerHTML = `<p class="muted lib-globe-fallback">The 3D globe couldn't load (offline?). All cases are listed on the left.</p>`;
+    return;
+  }
+  const cases = libCases();
+  const g = window.Globe()(el)
+    .backgroundColor("rgba(0,0,0,0)")
+    .globeImageUrl("/static/assets/earth-night.webp")
+    .showAtmosphere(true).atmosphereColor("#8b7bff").atmosphereAltitude(0.2)
+    .pointsData(cases).pointLat("lat").pointLng("lng")
+    // big hit area + hover highlight; the globe holds still while a hotspot is hovered
+    .pointResolution(16)
+    .pointsTransitionDuration(250)
+    .pointLabel(c => `<div class="globe-tip"><b>${esc(c.title)}</b><br>${esc(c.place)} · ${esc(c.year)}<br><span class="globe-tip-cta">Click to read →</span></div>`)
+    .onPointHover(c => {
+      lib.hover = c || null;
+      el.style.cursor = c ? "pointer" : "";
+      stylePoints(g);
+      clearTimeout(lib.resume);
+      if (c) { g.controls().autoRotate = false; return; }
+      // resume rotation shortly after leaving, but never cut short the longer pause after a click
+      const wait = Math.max(2500, (lib.focusUntil || 0) - Date.now());
+      lib.resume = setTimeout(() => { if (lib.globe && !lib.hover) lib.globe.controls().autoRotate = true; }, wait);
+    })
+    .onPointClick(c => { focusGlobe(c, true); })
+    .ringsData(cases).ringLat("lat").ringLng("lng")
+    .ringColor(() => t => `rgba(244,114,182,${1 - t})`).ringMaxRadius(4).ringPropagationSpeed(1.6).ringRepeatPeriod(1600)
+    .arcsData(globeArcs(cases))
+    .arcColor(a => a.real ? ["#fde68a", "#f59e0b"] : ["rgba(167,139,250,.55)", "rgba(34,211,238,.55)"])
+    .arcStroke(a => a.real ? 0.7 : 0.35)
+    .arcAltitudeAutoScale(0.45)
+    .arcDashLength(a => a.real ? 0.5 : 0.3).arcDashGap(a => a.real ? 0.4 : 1.4)
+    .arcDashAnimateTime(a => a.real ? 2200 : 4200);
+  stylePoints(g);
+  g.renderer().setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));   // sharp enough, much cheaper on 4K / phones
+  const ctl = g.controls();
+  ctl.autoRotate = true; ctl.autoRotateSpeed = 0.45; ctl.enableZoom = false;
+  // slow right down while the mouse is over the globe, so hotspots are easy to catch
+  el.addEventListener("mouseenter", () => { ctl.autoRotateSpeed = 0.12; });
+  el.addEventListener("mouseleave", () => { ctl.autoRotateSpeed = 0.45; });
+  g.pointOfView({ lat: 20, lng: 78, altitude: 2.3 }, 0);   // start over India
+  lib.globe = g;
+  sizeGlobe();
+  if (document.body.dataset.view !== "library") g.pauseAnimation();
+}
 
 // ---------- init ----------
 connectBrowsing();
