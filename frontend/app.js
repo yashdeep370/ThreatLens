@@ -721,20 +721,18 @@ function homeVisibility(onHome) {
     if (section) $$(".q-cloud", section).forEach(c => { c.style.opacity = "1"; c.style.transform = c.classList.contains("q-cloud-right") ? "scaleX(-1)" : "none"; });
     return;
   }
-  const rainbow = $("#q-rainbow"), left = $("#q-cloud-left"), right = $("#q-cloud-right");
+  const left = $("#q-cloud-left"), right = $("#q-cloud-right");
   const lerp = (a, b, f) => a + (b - a) * f;
-  const cur = { rainbowY: 120, cloudX: 200, cloudY: 0 };
+  const cur = { cloudX: 200, cloudY: 0 };
   let visible = false, raf = null;
 
   function frame() {
     const rect = section.getBoundingClientRect(), vh = innerHeight;
     const progress = Math.min(1, Math.max(0, (vh - rect.top) / (vh + rect.height)));
     const inView = progress > 0.12 && progress < 0.92;
-    cur.rainbowY = lerp(cur.rainbowY, 120 - progress * 280, 0.06);   // +120px -> -160px
     cur.cloudX = lerp(cur.cloudX, inView ? 0 : 200, 0.04);            // slide in / back out
     cur.cloudY = lerp(cur.cloudY, progress * -50, 0.04);              // gentle upward drift
     const opacity = Math.max(0, 1 - cur.cloudX / 200);
-    rainbow.style.transform = `translate3d(0, ${cur.rainbowY.toFixed(2)}px, 0)`;
     left.style.transform = `translate3d(${(-cur.cloudX).toFixed(2)}px, ${cur.cloudY.toFixed(2)}px, 0)`;
     right.style.transform = `translate3d(${cur.cloudX.toFixed(2)}px, ${cur.cloudY.toFixed(2)}px, 0) scaleX(-1)`;
     left.style.opacity = right.style.opacity = opacity.toFixed(3);
@@ -759,6 +757,49 @@ function homeVisibility(onHome) {
     }
     const p = v.play(); if (p && p.catch) p.catch(() => {});
   }, { rootMargin: "100px 0px" }).observe($("#site-footer"));
+})();
+
+// Headline: once the masked rise ends, release the mask so the glow isn't clipped into a band.
+$(".home-title .ln-i").addEventListener("animationend", () => $(".home-title").classList.add("risen"));
+if (REDUCED_MOTION) $(".home-title").classList.add("risen");
+
+// Typing helper shared by the footer tagline (same rhythm as the landing page).
+function typeInto(out, caret, text, startDelay = 0) {
+  if (REDUCED_MOTION) { out.textContent = text; return; }
+  let i = 0;
+  const step = () => {
+    out.textContent = text.slice(0, ++i);
+    if (i >= text.length) { caret.classList.add("done"); return; }
+    const ch = text[i - 1];
+    setTimeout(step, ch === "." ? 420 : ch === " " ? 70 : 38 + Math.random() * 34);
+  };
+  setTimeout(() => caret.classList.add("on"), startDelay);
+  setTimeout(step, startDelay + 200);
+}
+
+// Quote: words reveal one after another (blur -> sharp) when the section scrolls into view.
+(function quoteReveal() {
+  const fig = $(".q-content"), quote = fig && fig.querySelector("blockquote");
+  if (!quote || REDUCED_MOTION) return;
+  const words = quote.textContent.trim().split(/\s+/);
+  quote.setAttribute("aria-label", quote.textContent.trim());
+  quote.innerHTML = words.map((w, i) => `<span class="w" aria-hidden="true" style="--i:${i}">${esc(w)}</span>`).join(" ");
+  fig.style.setProperty("--sig-delay", `${words.length * 55 + 450}ms`);
+  fig.classList.add("arm");
+  new IntersectionObserver(([entry], obs) => {
+    if (entry.isIntersecting) { fig.classList.add("go"); obs.disconnect(); }
+  }, { threshold: 0.35 }).observe(fig);
+})();
+
+// Footer tagline types itself the first time the footer is reached.
+(function footerTagline() {
+  const out = $("#footer-typed"), caret = $("#footer-caret");
+  if (!out) return;
+  new IntersectionObserver(([entry], obs) => {
+    if (!entry.isIntersecting) return;
+    obs.disconnect();
+    typeInto(out, caret, "See the Threat. Understand the Risk. Secure the Future.", 400);
+  }, { threshold: 0.4 }).observe($(".footer-hero"));
 })();
 
 $("#back-to-top").addEventListener("click", e => { e.preventDefault(); scrollTo({ top: 0, behavior: REDUCED_MOTION ? "auto" : "smooth" }); });

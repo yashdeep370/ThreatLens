@@ -95,7 +95,6 @@
       </div>
 
       <div class="quote-section" id="quote-section">
-        <img class="q-rainbow" id="q-rainbow" src="/static/assets/rainbow.webp" alt="" aria-hidden="true">
         <img class="q-cloud q-cloud-left" id="q-cloud-left" src="/static/assets/cloud.webp" alt="" aria-hidden="true">
         <img class="q-cloud q-cloud-right" id="q-cloud-right" src="/static/assets/cloud.webp" alt="" aria-hidden="true">
         <figure class="q-content">
@@ -340,7 +339,10 @@
     <div class="footer-content">
       <div class="footer-hero">
         <div class="footer-word">ThreatLens</div>
-        <p class="footer-tag">See the Threat. Understand the Risk. Secure the Future.</p>
+        <p class="footer-tag" aria-label="See the Threat. Understand the Risk. Secure the Future.">
+          <span class="ghost" aria-hidden="true">See the Threat. Understand the Risk. Secure the Future.</span><span
+                class="live" aria-hidden="true"><span id="footer-typed"></span><span class="caret" id="footer-caret"></span></span>
+        </p>
         <a class="footer-top liquid-glass" href="#" id="back-to-top">Back to top</a>
       </div>
 
@@ -404,7 +406,12 @@
 </div>
 
 <!-- CHAT -->
-<button class="chat-fab" id="chat-fab" title="AI security assistant">💬 Ask AI</button>
+<button class="chat-fab" id="chat-fab" title="AI security assistant" aria-label="Ask AI security assistant">
+  <span class="fab-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5c.4 3.6 1.5 5.9 3.3 7.2 1.4 1 3.2 1.6 5.7 1.8v1c-2.5.2-4.3.8-5.7 1.8-1.8 1.3-2.9 3.6-3.3 7.2h-1c-.4-3.6-1.5-5.9-3.3-7.2-1.4-1-3.2-1.6-5.7-1.8v-1c2.5-.2 4.3-.8 5.7-1.8 1.8-1.3 2.9-3.6 3.3-7.2h1Z"/><path class="fab-spark" d="M19.2 2.2c.2 1.4.6 2.2 1.3 2.7.5.4 1.2.6 2.1.7v.6c-.9.1-1.6.3-2.1.7-.7.5-1.1 1.3-1.3 2.7h-.6c-.2-1.4-.6-2.2-1.3-2.7-.5-.4-1.2-.6-2.1-.7v-.6c.9-.1 1.6-.3 2.1-.7.7-.5 1.1-1.3 1.3-2.7h.6Z"/></svg>
+  </span>
+  <span class="fab-label">Ask AI</span>
+</button>
 <aside class="chat" id="chat" hidden>
   <div class="chat-head">
     <div><b>Security Assistant</b><div class="small muted" id="chat-context">No analysis selected</div></div>
