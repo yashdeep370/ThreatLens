@@ -30,7 +30,7 @@ function render(a, backend) {
     <div class="card"><div class="label">Site security</div>${liveHtml}</div>
     ${a.playbook ? `<div class="card"><div class="label">What to do</div><ul>${a.playbook.recommendations.slice(0, 3).map(r => `<li>${esc(r.action)}</li>`).join("")}</ul></div>` : ""}
     <button class="btn ghost" id="open-report">Open full report & ask AI</button>`;
-  $("#open-report").addEventListener("click", () => chrome.tabs.create({ url: `${backend}/#analysis=${a.id}` }));
+  $("#open-report").addEventListener("click", () => chrome.tabs.create({ url: `${backend}/app#analysis=${a.id}` }));
 }
 
 async function runCheck(url) {

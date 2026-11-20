@@ -8,6 +8,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/styles.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script>
+    // Arriving from the landing page's "dive into the globe" transition: fade the app in.
+    try {
+      if (sessionStorage.getItem("tl-enter") && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        document.documentElement.classList.add("arriving");
+      }
+      sessionStorage.removeItem("tl-enter");
+    } catch (e) {}
+  </script>
 </head>
 <body>
 <div class="app">

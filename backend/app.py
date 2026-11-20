@@ -324,5 +324,10 @@ if TEST_UPLOADS_DIR.exists():
 
 
 @app.get("/")
+def landing():
+    return FileResponse(FRONTEND_DIR / "landing.html")
+
+
+@app.get("/app")
 def index():
     return FileResponse(FRONTEND_DIR / "index.html")
