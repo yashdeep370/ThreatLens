@@ -328,6 +328,17 @@ def landing():
     return FileResponse(FRONTEND_DIR / "landing.html")
 
 
+APP_PAGES = {"dashboard", "live", "browsing", "traffic", "website", "history", "how-it-works", "about"}
+
+
 @app.get("/app")
 def index():
+    return FileResponse(FRONTEND_DIR / "index.html")
+
+
+@app.get("/app/{page}")
+def app_page(page: str):
+    """Each feature has its own URL; the single-page app picks the view from the path."""
+    if page not in APP_PAGES:
+        raise HTTPException(404, "Page not found")
     return FileResponse(FRONTEND_DIR / "index.html")

@@ -77,16 +77,68 @@ function recList(recs) {
   return `<ol>${(recs || []).map(r => `<li>${esc(r.action)}<div class="rec-why">${esc(r.why)}</div></li>`).join("")}</ol>`;
 }
 
-// ---------- navigation ----------
-function show(view) {
+// ---------- navigation (real URLs: /app, /app/dashboard, /app/live, ...) ----------
+const ROUTES = {
+  home: "/app", dashboard: "/app/dashboard", live: "/app/live", browsing: "/app/browsing",
+  traffic: "/app/traffic", website: "/app/website", history: "/app/history",
+  how: "/app/how-it-works", about: "/app/about",
+};
+const viewFromPath = p => Object.keys(ROUTES).find(k => ROUTES[k] === p.replace(/\/+$/, "")) || "home";
+
+function show(view, { push = true } = {}) {
+  if (!$(`#view-${view}`)) view = "home";
   $$(".view").forEach(v => v.classList.toggle("active", v.id === `view-${view}`));
-  $$(".nav-item").forEach(n => n.classList.toggle("active", n.dataset.view === view));
+  $$("[data-view]").forEach(n => n.classList.toggle("active", n.dataset.view === view));
+  document.body.dataset.view = view;
+  if (push && location.pathname !== ROUTES[view]) history.pushState({ view }, "", ROUTES[view]);
+  movePill();
+  closeMenu();
   if (view === "dashboard") loadDashboard();
   if (view === "history") loadHistory();
   window.scrollTo(0, 0);
 }
-$$(".nav-item").forEach(n => n.addEventListener("click", () => show(n.dataset.view)));
+
+// Sliding highlight behind the active item in the pill navbar.
+function movePill() {
+  const nav = $("#pill-nav"), pill = $("#pill-indicator");
+  const active = nav && nav.querySelector("a.active");
+  if (!active) { pill.style.opacity = "0"; return; }
+  pill.style.opacity = "1";
+  pill.style.width = `${active.offsetWidth}px`;
+  pill.style.transform = `translateX(${active.offsetLeft}px)`;
+}
+addEventListener("resize", movePill);
+addEventListener("popstate", () => show(viewFromPath(location.pathname), { push: false }));
+
+// Burger menu
+function closeMenu() {
+  $("#menu").hidden = true;
+  $("#burger").setAttribute("aria-expanded", "false");
+  $("#burger").setAttribute("aria-label", "Open menu");
+  $("#burger").classList.remove("open");
+}
+$("#burger").addEventListener("click", e => {
+  e.stopPropagation();
+  const open = $("#menu").hidden;
+  $("#menu").hidden = !open;
+  $("#burger").setAttribute("aria-expanded", String(open));
+  $("#burger").setAttribute("aria-label", open ? "Close menu" : "Open menu");
+  $("#burger").classList.toggle("open", open);
+});
 document.addEventListener("click", e => {
+  if (!$("#menu").hidden && !e.target.closest("#menu") && !e.target.closest("#burger")) closeMenu();
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && !$("#menu").hidden) { closeMenu(); $("#burger").focus(); }
+});
+
+document.addEventListener("click", e => {
+  // In-app links: switch view without reloading (Ctrl/Cmd-click still opens a new tab).
+  const link = e.target.closest("a[data-view]");
+  if (link && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+    e.preventDefault();
+    show(link.dataset.view);
+  }
   const go = e.target.closest("[data-goto]");
   if (go) show(go.dataset.goto);
   if (e.target.closest("[data-action=print]")) window.print();
@@ -633,9 +685,13 @@ loadStatus();
 loadSamples();
 loadTestUploads();
 loadScenarios();
-loadDashboard();
 
-// Deep link from the browser extension: /#analysis=<id> opens that report.
+// Open the page named by the URL (/app/live, /app/traffic, ...).
+show(viewFromPath(location.pathname), { push: false });
+history.replaceState({ view: viewFromPath(location.pathname) }, "", location.pathname + location.hash);
+document.fonts && document.fonts.ready.then(movePill);  // re-measure once the nav font has loaded
+
+// Deep link from the browser extension: /app#analysis=<id> opens that report.
 const deepLink = location.hash.match(/^#analysis=([\w-]+)$/);
 if (deepLink) {
   api(`/api/analysis/${deepLink[1]}`).then(a => {
