@@ -85,14 +85,47 @@ const ROUTES = {
 };
 const viewFromPath = p => Object.keys(ROUTES).find(k => ROUTES[k] === p.replace(/\/+$/, "")) || "home";
 
-function show(view, { push = true } = {}) {
+// Page transition: the current page fades out briefly, then the new one rises in.
+const PAGE_OUT_MS = 180;
+let navToken = 0;
+
+function show(view, { push = true, animate = true } = {}) {
   if (!$(`#view-${view}`)) view = "home";
-  $$(".view").forEach(v => v.classList.toggle("active", v.id === `view-${view}`));
+  const current = $(".view.active");
+  const next = $(`#view-${view}`);
+  // nav state updates immediately, so the pill slides while the page changes
   $$("[data-view]").forEach(n => n.classList.toggle("active", n.dataset.view === view));
-  document.body.dataset.view = view;
   if (push && location.pathname !== ROUTES[view]) history.pushState({ view }, "", ROUTES[view]);
   movePill();
   closeMenu();
+
+  const token = ++navToken;
+  const swap = () => {
+    if (token !== navToken) return;   // a newer click won
+    $$(".view").forEach(v => v.classList.remove("active", "leaving", "entering"));
+    next.classList.add("active");
+    document.body.dataset.view = view;
+    window.scrollTo(0, 0);
+    afterShow(view);
+    if (animate && current && current !== next && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      next.classList.add("entering");
+      next.addEventListener("animationend", function done(e) {
+        if (e.target !== next) return;
+        next.classList.remove("entering");
+        next.removeEventListener("animationend", done);
+      });
+    }
+  };
+  const motion = animate && current && current !== next && !matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (motion) {
+    current.classList.add("leaving");
+    setTimeout(swap, PAGE_OUT_MS);
+  } else {
+    swap();
+  }
+}
+
+function afterShow(view) {
   if (view === "dashboard") loadDashboard();
   if (view === "history") loadHistory();
   homeVisibility(view === "home");
@@ -823,7 +856,7 @@ loadTestUploads();
 loadScenarios();
 
 // Open the page named by the URL (/app/live, /app/traffic, ...).
-show(viewFromPath(location.pathname), { push: false });
+show(viewFromPath(location.pathname), { push: false, animate: false });
 history.replaceState({ view: viewFromPath(location.pathname) }, "", location.pathname + location.hash);
 document.fonts && document.fonts.ready.then(movePill);  // re-measure once the nav font has loaded
 

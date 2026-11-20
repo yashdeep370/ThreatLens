@@ -291,6 +291,12 @@ body[data-view="home"] .footer-overlay {
 
 .view { display: none; }
 .view.active { display: block; }
+/* page transition between navbar destinations */
+.view.leaving { animation: pageOut .18s cubic-bezier(.4, 0, 1, 1) forwards; pointer-events: none; }
+.view.entering { animation: pageIn .55s cubic-bezier(.16, 1, .3, 1) both; }
+@keyframes pageOut { to { opacity: 0; transform: translateY(-8px); filter: blur(4px); } }
+@keyframes pageIn { from { opacity: 0; transform: translateY(16px); filter: blur(8px); } to { opacity: 1; transform: none; filter: none; } }
+@media (prefers-reduced-motion: reduce) { .view.leaving, .view.entering { animation: none; } }
 .page-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
 .page-head p { margin: 4px 0 0; }
 .head-actions { display: flex; gap: 8px; }
